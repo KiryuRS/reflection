@@ -22,12 +22,6 @@ struct is_array_type<std::array<T, N>> : std::true_type
 
 } // namespace detail
 
-template <typename T>
-concept always_false = false;
-
-template <typename T, typename RawT = std::remove_cvref_t<T>>
-concept aggregate = std::is_aggregate_v<RawT>;
-
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept same_as_array_type = detail::is_array_type<RawT>::value;
 
@@ -52,7 +46,6 @@ concept descriptor_like = requires {
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflectable = requires {
-    requires aggregate<RawT>;
     { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>;
 };
 
