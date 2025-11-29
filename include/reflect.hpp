@@ -2,11 +2,9 @@
 
 #include "concepts.hpp"
 #include "utility.hpp"
+#include "preprocessor.hpp"
 
 #include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/seq/for_each_i.hpp>
-#include <boost/preprocessor/stringize.hpp>
-#include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/tuple/to_seq.hpp>
 
 #include <iomanip>
@@ -98,24 +96,22 @@ constexpr void for_each(Functor&& func)
     visitor(std::make_index_sequence<META_ARRAY_INFO.size()>{});
 }
 
-#define CONCAT_HELPER(a, b, c) a##_##b##c
-
-#define GENERATE_DESCRIPTOR(r, Class, Index, Member)                                                    \
-    struct CONCAT_HELPER(descriptor, Class, Member)                                                     \
+#define GENERATE_DESCRIPTOR(r, Class, Member)                                                           \
+    struct PP_CREATE_CLASS_NAME(descriptor, Class, Member)                                              \
     {                                                                                                   \
         using class_type = Class;                                                                       \
         using member_type = decltype(Class::Member);                                                    \
         using member_pointer_type = member_type Class::*;                                               \
                                                                                                         \
-        static constexpr std::string_view name = BOOST_PP_STRINGIZE(Member);                            \
+        static constexpr std::string_view name = PP_STRINGIZE(Member);                                  \
         static constexpr std::string_view mem_type_str = ::reflect::utility::get_name<member_type>();   \
         static constexpr member_pointer_type mem_ptr = &Class::Member;                                  \
     };
 
-#define GENERATE_MEMBER_META_INFO(r, Class, Member) ::reflect::detail::meta_type_info<CONCAT_HELPER(descriptor, Class, Member)>,
+#define GENERATE_MEMBER_META_INFO(r, Class, Member) ::reflect::detail::meta_type_info<PP_CREATE_CLASS_NAME(descriptor, Class, Member)>,
 
 #define GENERATE_META_INFO(Class, ...)                                                                                                  \
-    BOOST_PP_SEQ_FOR_EACH_I(GENERATE_DESCRIPTOR, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))                                             \
+    BOOST_PP_SEQ_FOR_EACH(GENERATE_DESCRIPTOR, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))                                               \
     static consteval auto meta_info_array_as_id()                                                                                       \
     {                                                                                                                                   \
         /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */                               \
@@ -130,7 +126,7 @@ constexpr void for_each(Functor&& func)
     {                                                                                               \
         std::stringstream oss;                                                                      \
         const char* delimiter = "";                                                                 \
-        oss << '{' << BOOST_PP_STRINGIZE(Class) << ": {";                                           \
+        oss << '{' << PP_STRINGIZE(Class) << ": {";                                           \
         ::reflect::for_each<Class>([&oss, &delimiter, &object] <typename Descriptor> () {           \
             oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
                 << Descriptor::name << "': " << ::reflect::get_member_variable<Descriptor>(object); \
