@@ -53,7 +53,7 @@ concept descriptor_like = requires {
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflectable = requires {
     requires aggregate<RawT>;
-    { RawT::generate_meta_info() } -> same_as_array_type;
+    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>;
 };
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>

@@ -6,6 +6,27 @@ namespace tests {
 
 namespace mocks {
 
+struct foo_no_reflect
+{
+    long l;
+    int i;
+    short s;
+    char c;
+};
+
+struct bar_no_reflect
+{
+    std::string_view str_view1;
+    std::string_view str_view2;
+    double price;
+};
+
+struct baz_no_reflect
+{
+    bar_no_reflect b;
+    float f;
+};
+
 struct foo
 {
     long l;
@@ -13,7 +34,7 @@ struct foo
     short s;
     char c;
 
-    GENERATE_META_INFO(foo, (l, i, s, c));
+    GENERATE_META_INFO(foo, (l, i, s, c)); // used when we just want the bare reflection
 };
 
 struct bar
@@ -22,7 +43,7 @@ struct bar
     std::string_view str_view2;
     double price;
 
-    REFLECT(bar, (str_view1, str_view2, price));
+    REFLECT(bar, (str_view1, str_view2, price)); // used when we want reflection + printable + other encapsulated logic
 };
 
 struct baz
@@ -42,9 +63,32 @@ struct goo
 
 } // namespace mocks
 
+TEST(test_reflection, test_class_traits_should_remain_same)
+{
+    // layout specifications
+    static_assert(std::is_standard_layout_v<mocks::foo_no_reflect>);
+    static_assert(std::is_standard_layout_v<mocks::foo>);
+    static_assert(std::is_aggregate_v<mocks::foo_no_reflect>);
+    static_assert(std::is_aggregate_v<mocks::foo>);
+
+    // construction
+    static_assert(std::is_trivially_default_constructible_v<mocks::foo_no_reflect>);
+    static_assert(std::is_trivially_default_constructible_v<mocks::foo>);
+    static_assert(std::is_trivially_copy_constructible_v<mocks::foo_no_reflect>);
+    static_assert(std::is_trivially_copy_constructible_v<mocks::foo>);
+    static_assert(std::is_trivially_move_constructible_v<mocks::foo_no_reflect>);
+    static_assert(std::is_trivially_move_constructible_v<mocks::foo>);
+    static_assert(std::is_trivially_default_constructible_v<mocks::foo_no_reflect>);
+    static_assert(std::is_trivially_default_constructible_v<mocks::foo>);
+
+    // sizeof classes should be the same
+    static_assert(sizeof(mocks::foo) == sizeof(mocks::foo_no_reflect));
+    static_assert(sizeof(mocks::bar) == sizeof(mocks::bar_no_reflect));
+    static_assert(sizeof(mocks::baz) == sizeof(mocks::baz_no_reflect));
+}
+
 TEST(test_reflection, test_generate_meta_info)
 {
-    static_assert(sizeof(mocks::foo) == 16);
 
     // should be able to use aggregate initialization and constexpr
     constexpr mocks::foo f1{.l = 100, .i = 99, .s = 98, .c = 'A'};
@@ -57,9 +101,6 @@ TEST(test_reflection, test_generate_meta_info)
 
 TEST(test_reflection, test_reflect)
 {
-    static constexpr size_t sizeof_bar = sizeof(std::string_view) + sizeof(std::string_view) + sizeof(double); // should not have any padding
-    static_assert(sizeof(mocks::bar) == sizeof_bar);
-
     // should be possible to use aggregate initialization and constexpr
     constexpr mocks::bar b1{.str_view1 = "Hello World", .str_view2 = "Some static very long long long long string", .price = 69.0};
     constexpr mocks::bar b2 = b1;

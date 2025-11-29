@@ -26,11 +26,12 @@ struct meta_id
 #pragma GCC diagnostic pop
 };
 
-
-template <typename T>
+template <typename T, auto V = int{}>
 struct meta_type
 {
     using value_type = T;
+    static constexpr auto value = V;
+
     static void id() {} // unique type
 
     friend consteval auto get_meta_info(meta_id<id>)
@@ -39,13 +40,19 @@ struct meta_type
     }
 };
 
-template <typename T>
-static constexpr auto meta_type_info = detail::meta_type<T>::id;
+template <typename T, auto V = int{}>
+static constexpr auto meta_type_info = meta_type<T, V>::id;
 
 template <auto MetaTypeInfo>
-using type_from_meta_info = typename decltype(get_meta_info(detail::meta_id<MetaTypeInfo>{}))::value_type;
+using meta_type_underlying_type = typename decltype(get_meta_info(meta_id<MetaTypeInfo>{}))::value_type;
 
 } // namespace detail
+
+template <concepts::reflectable T>
+consteval auto generate_meta_info()
+{
+    return decltype(get_meta_info(detail::meta_id<T::meta_info_array_as_id()>{}))::value;
+}
 
 template <concepts::descriptor_like Descriptor, concepts::reflectable T>
 constexpr decltype(auto) get_member_variable(T&& obj)
@@ -62,11 +69,19 @@ constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor)
 template <concepts::reflectable T, typename Functor>
 constexpr void for_each(Functor&& func)
 {
-    static constexpr auto META_ARRAY_INFO = T::generate_meta_info();
-    static_assert(concepts::any_invocable<Functor, detail::type_from_meta_info<META_ARRAY_INFO[0]>>, "Functor is not invocable!");
+    // unfortunately the existing range-based for loop (pre C++26) does not have constexpr support,
+    // so we use the traditional lambda + variadic to loop through all of the meta types.
+    // ideally what we want is:
+    // for template (auto meta : generate_meta_info<T>())
+    // {
+    //     constexpr auto descriptor = get_descriptor<meta>();
+    //     ... // do something with the descriptor
+    // }
+    static constexpr auto META_ARRAY_INFO = generate_meta_info<T>();
+    static_assert(concepts::any_invocable<Functor, detail::meta_type_underlying_type<META_ARRAY_INFO[0]>>, "Functor is not invocable!");
 
     const auto on_each_visit = [&func] <size_t I> () {
-        using descriptor_t = detail::type_from_meta_info<META_ARRAY_INFO[I]>;
+        using descriptor_t = detail::meta_type_underlying_type<META_ARRAY_INFO[I]>;
 
         if constexpr (concepts::template_only_invocable<Functor, descriptor_t>)
             func.template operator()<descriptor_t>();
@@ -101,10 +116,11 @@ constexpr void for_each(Functor&& func)
 
 #define GENERATE_META_INFO(Class, ...)                                                                                                  \
     BOOST_PP_SEQ_FOR_EACH_I(GENERATE_DESCRIPTOR, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))                                             \
-    static consteval auto generate_meta_info()                                                                                          \
+    static consteval auto meta_info_array_as_id()                                                                                       \
     {                                                                                                                                   \
+        /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */                               \
         static constexpr std::array meta{BOOST_PP_SEQ_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))};  \
-        return meta;                                                                                                                    \
+        return ::reflect::detail::meta_type_info<Class, meta>;                                                                          \
     }
 
 #define REFLECT(Class, ...) \
