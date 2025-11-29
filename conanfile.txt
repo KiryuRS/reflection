@@ -2,6 +2,9 @@
 boost/1.86.0
 gtest/1.17.0
 
+[tool_requires]
+cmake/[>=4.1.0]
+
 [generators]
 CMakeDeps
 CMakeToolchain

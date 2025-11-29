@@ -9,6 +9,10 @@
 #include <boost/preprocessor/tuple/elem.hpp>
 #include <boost/preprocessor/tuple/to_seq.hpp>
 
+#include <iomanip>
+#include <sstream>
+#include <utility>
+
 namespace reflect {
 
 namespace detail {
@@ -22,13 +26,11 @@ struct meta_id
 #pragma GCC diagnostic pop
 };
 
-template <typename, auto>
-struct descriptor;
 
-template <typename Class, auto MemberPtr>
+template <typename T>
 struct meta_type
 {
-    using value_type = descriptor<Class, MemberPtr>;
+    using value_type = T;
     static void id() {} // unique type
 
     friend consteval auto get_meta_info(meta_id<id>)
@@ -37,56 +39,34 @@ struct meta_type
     }
 };
 
-template <typename Class, auto MemberPtr>
-static constexpr auto meta_info_1 = detail::meta_type<Class, MemberPtr>::id;
+template <typename T>
+static constexpr auto meta_type_info = detail::meta_type<T>::id;
 
-template <typename>
-struct is_descriptor : std::false_type
-{
-};
-
-template <typename T, auto MemPtr>
-struct is_descriptor<descriptor<T, MemPtr>> : std::true_type
-{
-};
-
-template <typename T, typename RawT = std::remove_cvref_t<T>>
-concept same_as_descriptor = is_descriptor<T>::value;
+template <auto MetaTypeInfo>
+using type_from_meta_info = typename decltype(get_meta_info(detail::meta_id<MetaTypeInfo>{}))::value_type;
 
 } // namespace detail
 
-template <typename T>
-consteval auto generate_meta_info();
-
-template <auto MetaInfo1>
-using type_from_meta_info = typename decltype(get_meta_info(detail::meta_id<MetaInfo1>{}))::value_type;
-
-template <typename T, typename RawT = std::remove_cvref_t<T>>
-concept reflectable = requires {
-    { generate_meta_info<RawT>() } -> concepts::same_as_array_type;
-    requires detail::same_as_descriptor<type_from_meta_info<generate_meta_info<RawT>()[0]>>; // did you forget to use GENERATE_META_INFO macro?
-};
-
-template <detail::same_as_descriptor Descriptor, reflectable T>
+template <concepts::descriptor_like Descriptor, concepts::reflectable T>
 constexpr decltype(auto) get_member_variable(T&& obj)
 {
     return std::forward<T>(obj).*Descriptor::mem_ptr;
 }
 
-template <detail::same_as_descriptor Descriptor, reflectable T>
+template <concepts::descriptor_like Descriptor, concepts::reflectable T>
 constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor)
 {
     return std::forward<T>(obj).*(descriptor.mem_ptr);
 }
 
-template <reflectable T, typename Functor>
+template <concepts::reflectable T, typename Functor>
 constexpr void for_each(Functor&& func)
 {
-    static constexpr auto META_ARRAY_INFO = generate_meta_info<T>();
-    static_assert(concepts::any_invocable<Functor, type_from_meta_info<META_ARRAY_INFO[0]>>, "Functor is not invocable!");
+    static constexpr auto META_ARRAY_INFO = T::generate_meta_info();
+    static_assert(concepts::any_invocable<Functor, detail::type_from_meta_info<META_ARRAY_INFO[0]>>, "Functor is not invocable!");
 
     const auto on_each_visit = [&func] <size_t I> () {
-        using descriptor_t = type_from_meta_info<META_ARRAY_INFO[I]>;
+        using descriptor_t = detail::type_from_meta_info<META_ARRAY_INFO[I]>;
 
         if constexpr (concepts::template_only_invocable<Functor, descriptor_t>)
             func.template operator()<descriptor_t>();
@@ -103,35 +83,62 @@ constexpr void for_each(Functor&& func)
     visitor(std::make_index_sequence<META_ARRAY_INFO.size()>{});
 }
 
-#define DEFINE_SPECIALIZED_DESCRIPTOR(r, Class, Index, Member) \
-    namespace detail { \
-        template <> \
-        struct descriptor<Class, &Class::Member> \
-        { \
-            using class_type = Class; \
-            using member_type = decltype(Class::Member); \
-            using member_pointer_type = member_type Class::*; \
-            \
-            static constexpr std::string_view name = BOOST_PP_STRINGIZE(Member); \
-            static constexpr std::string_view mem_type_str = utility::get_name<member_type>(); \
-            static constexpr member_pointer_type mem_ptr = &Class::Member; \
-        }; \
-    } /* namespace detail */
+#define CONCAT_HELPER(a, b, c) a##_##b##c
 
-#define GENERATE_META_INFO_1(r, Class, Member) detail::meta_info_1<Class, &Class::Member>,
+#define GENERATE_DESCRIPTOR(r, Class, Index, Member)                                                    \
+    struct CONCAT_HELPER(descriptor, Class, Member)                                                     \
+    {                                                                                                   \
+        using class_type = Class;                                                                       \
+        using member_type = decltype(Class::Member);                                                    \
+        using member_pointer_type = member_type Class::*;                                               \
+                                                                                                        \
+        static constexpr std::string_view name = BOOST_PP_STRINGIZE(Member);                            \
+        static constexpr std::string_view mem_type_str = ::reflect::utility::get_name<member_type>();   \
+        static constexpr member_pointer_type mem_ptr = &Class::Member;                                  \
+    };
 
-#define GENERATE_META_INFO(Class, ...) \
-    namespace reflect { \
-    BOOST_PP_SEQ_FOR_EACH_I(DEFINE_SPECIALIZED_DESCRIPTOR, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__)) \
-    template <> \
-    consteval auto generate_meta_info<Class>() \
-    { \
-        return std::array{BOOST_PP_SEQ_FOR_EACH(GENERATE_META_INFO_1, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))}; \
-    } \
-    } /* namespace reflect */
+#define GENERATE_MEMBER_META_INFO(r, Class, Member) ::reflect::detail::meta_type_info<CONCAT_HELPER(descriptor, Class, Member)>,
+
+#define GENERATE_META_INFO(Class, ...)                                                                                                  \
+    BOOST_PP_SEQ_FOR_EACH_I(GENERATE_DESCRIPTOR, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))                                             \
+    static consteval auto generate_meta_info()                                                                                          \
+    {                                                                                                                                   \
+        static constexpr std::array meta{BOOST_PP_SEQ_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))};  \
+        return meta;                                                                                                                    \
+    }
 
 #define REFLECT(Class, ...) \
-    GENERATE_META_INFO(Class, __VA_ARGS__) \
-    /* TODO: Other kinds of reflection. operator<< overload? std::formatter? */
+    GENERATE_META_INFO(Class, __VA_ARGS__)                                                          \
+    /* Other useful reflection helper functions. e.g. operator<< overload, to_string */             \
+    friend std::string to_string(const Class& object)                                               \
+    {                                                                                               \
+        std::stringstream oss;                                                                      \
+        const char* delimiter = "";                                                                 \
+        oss << '{' << BOOST_PP_STRINGIZE(Class) << ": {";                                           \
+        ::reflect::for_each<Class>([&oss, &delimiter, &object] <typename Descriptor> () {           \
+            oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
+                << Descriptor::name << "': " << ::reflect::get_member_variable<Descriptor>(object); \
+        });                                                                                         \
+        oss << "} }";                                                                               \
+        return oss.str();                                                                           \
+    }                                                                                               \
+                                                                                                    \
+    friend std::ostream& operator<<(std::ostream& os, const Class& object)                          \
+    {                                                                                               \
+        return os << to_string(object);                                                             \
+    } \
 
 } // namespace reflect
+
+namespace std {
+
+template <reflect::concepts::reflect_and_printable T>
+struct formatter<T> : formatter<string>
+{
+    auto format(const T& object, format_context& ctx) const
+    {
+        return formatter<string>::format(to_string(object), ctx);
+    }
+};
+
+} // namespace std

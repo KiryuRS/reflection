@@ -1,5 +1,6 @@
 # packages
-find_package(Boost REQUIRED COMPONENTS HEADERS)
+
+
 enable_testing()
 find_package(GTest REQUIRED)
 
@@ -12,7 +13,6 @@ function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
             CXX_STANDARD                23
             CXX_EXTENSIONS              OFF
             LINKER_LANGUAGE             CXX
-            RUNTIME_OUTPUT_DIRECTORY    "${PROJECT_SOURCE_DIR}/build/bin"
     )
 
     # compiler flags
@@ -45,9 +45,14 @@ function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
 
     target_link_libraries(${TEST_FILENAME_WITHOUT_CPP}
         PRIVATE
-            boost::boost
+            reflection_interface
+            GTest::gtest
             GTest::gtest_main
+            pthread
+            -l:libgmock.a # TODO: Resolve without specifying this library
     )
+
+    add_test(${TEST_FILENAME_WITHOUT_CPP} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${TEST_FILENAME_WITHOUT_CPP}")
 endfunction()
 
 add_unit_test(test_reflection)
