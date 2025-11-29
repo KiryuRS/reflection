@@ -142,7 +142,7 @@ constexpr void for_each(Functor&& func)
     friend std::ostream& operator<<(std::ostream& os, const Class& object)                          \
     {                                                                                               \
         return os << to_string(object);                                                             \
-    } \
+    }
 
 } // namespace reflect
 
