@@ -46,13 +46,13 @@ concept descriptor_like = requires {
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflectable = requires {
-    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>;
+    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>; // did you forget to use GENERATE_META_INFO / REFLECT macro?
 };
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflect_and_printable = requires {
     requires reflectable<RawT>;
-    { to_string(std::declval<RawT>()) } -> std::same_as<std::string>;
+    { to_string(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT macro?
 };
 
 } // namespace reflect::concepts
