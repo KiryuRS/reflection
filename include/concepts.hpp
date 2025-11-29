@@ -34,14 +34,14 @@ concept template_invocable = requires { std::declval<Functor>().template operato
 template <typename Functor, typename T>
 concept any_invocable = template_only_invocable<Functor, T> || template_invocable<Functor, T> || std::invocable<Functor, T>;
 
-template <typename T>
+template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept descriptor_like = requires {
-    typename T::class_type;
-    typename T::member_type;
-    typename T::member_pointer_type;
-    requires std::same_as<std::remove_cvref_t<decltype(T::name)>, std::string_view>;
-    requires std::same_as<std::remove_cvref_t<decltype(T::mem_type_str)>, std::string_view>;
-    requires std::same_as<std::remove_cvref_t<decltype(T::mem_ptr)>, typename T::member_pointer_type>;
+    typename RawT::class_type;
+    typename RawT::member_type;
+    typename RawT::member_pointer_type;
+    requires std::same_as<decltype(RawT::name), const std::string_view>;
+    requires std::same_as<decltype(RawT::mem_type_str), const std::string_view>;
+    requires std::same_as<decltype(RawT::mem_ptr), const typename T::member_pointer_type>;
 };
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
