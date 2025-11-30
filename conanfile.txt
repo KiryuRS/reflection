@@ -1,6 +1,6 @@
 [requires]
-boost/1.86.0
 gtest/1.17.0
+yaml-cpp/0.8.0
 
 [tool_requires]
 cmake/[>=4.1.0]

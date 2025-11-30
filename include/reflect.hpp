@@ -4,9 +4,6 @@
 #include "utility.hpp"
 #include "preprocessor.hpp"
 
-#include <boost/preprocessor/seq/for_each.hpp>
-#include <boost/preprocessor/tuple/to_seq.hpp>
-
 #include <iomanip>
 #include <sstream>
 #include <utility>
@@ -96,7 +93,7 @@ constexpr void for_each(Functor&& func)
     visitor(std::make_index_sequence<META_ARRAY_INFO.size()>{});
 }
 
-#define GENERATE_DESCRIPTOR(r, Class, Member)                                                           \
+#define GENERATE_DESCRIPTOR(Class, Member)                                                              \
     struct PP_CREATE_CLASS_NAME(descriptor, Class, Member)                                              \
     {                                                                                                   \
         using class_type = Class;                                                                       \
@@ -108,15 +105,15 @@ constexpr void for_each(Functor&& func)
         static constexpr member_pointer_type mem_ptr = &Class::Member;                                  \
     };
 
-#define GENERATE_MEMBER_META_INFO(r, Class, Member) ::reflect::detail::meta_type_info<PP_CREATE_CLASS_NAME(descriptor, Class, Member)>,
+#define GENERATE_MEMBER_META_INFO(Class, Member) ::reflect::detail::meta_type_info<PP_CREATE_CLASS_NAME(descriptor, Class, Member)>,
 
-#define GENERATE_META_INFO(Class, ...)                                                                                                  \
-    BOOST_PP_SEQ_FOR_EACH(GENERATE_DESCRIPTOR, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))                                               \
-    static consteval auto meta_info_array_as_id()                                                                                       \
-    {                                                                                                                                   \
-        /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */                               \
-        static constexpr std::array meta{BOOST_PP_SEQ_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, BOOST_PP_TUPLE_TO_SEQ(__VA_ARGS__))};  \
-        return ::reflect::detail::meta_type_info<Class, meta>;                                                                          \
+#define GENERATE_META_INFO(Class, ...)                                                                                  \
+    PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EVAL_TUPLE(__VA_ARGS__))                                                 \
+    static consteval auto meta_info_array_as_id()                                                                       \
+    {                                                                                                                   \
+        /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */               \
+        static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EVAL_TUPLE(__VA_ARGS__))};    \
+        return ::reflect::detail::meta_type_info<Class, meta>;                                                          \
     }
 
 #define REFLECT(Class, ...) \
@@ -126,7 +123,7 @@ constexpr void for_each(Functor&& func)
     {                                                                                               \
         std::stringstream oss;                                                                      \
         const char* delimiter = "";                                                                 \
-        oss << '{' << PP_STRINGIZE(Class) << ": {";                                           \
+        oss << '{' << PP_STRINGIZE(Class) << ": {";                                                 \
         ::reflect::for_each<Class>([&oss, &delimiter, &object] <typename Descriptor> () {           \
             oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
                 << Descriptor::name << "': " << ::reflect::get_member_variable<Descriptor>(object); \

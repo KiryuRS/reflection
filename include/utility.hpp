@@ -25,4 +25,27 @@ consteval std::string_view get_name()
     return t_function_name.substr(start_index, end_index - start_index);
 }
 
+// this removes the namespaces
+// e.g. std::vector<int> -> vector<int>
+//      some::long::namespace::vector<std::string> -> vector<std::string>
+//      foo<some_class::deep::within>::type -> type
+template <typename T>
+consteval std::string_view get_short_name()
+{
+    constexpr std::string_view full_type = get_name<T>();
+    size_t levels = 0, pos = std::string_view::npos;
+    for (size_t i = 0; i != full_type.length(); ++i)
+    {
+        char c = full_type[i];
+        if (c == '<')
+            ++levels;
+        else if (c == '>')
+            --levels;
+
+        if (levels == 0 && c == ':')
+            pos = i;
+    }
+    return pos == std::string_view::npos ? full_type : full_type.substr(pos + 1);
+}
+
 } // namespace reflect::utility

@@ -3,6 +3,7 @@
 
 enable_testing()
 find_package(GTest REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
     add_executable(${TEST_FILENAME_WITHOUT_CPP} ${TEST_FILENAME_WITHOUT_CPP}.cpp)
@@ -45,7 +46,7 @@ function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
 
     target_link_libraries(${TEST_FILENAME_WITHOUT_CPP}
         PRIVATE
-            reflection_interface
+            yaml-cpp
             GTest::gtest
             GTest::gtest_main
             pthread
@@ -56,3 +57,4 @@ function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
 endfunction()
 
 add_unit_test(test_reflection)
+add_unit_test(test_with_yaml)
