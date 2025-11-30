@@ -18,11 +18,25 @@ consteval std::string_view get_name()
     constexpr size_t start_index = void_function_name.find("void");
     static_assert(start_index != std::string_view::npos, "Possible that compiler changed how std::source_location works. Please revisit me!");
 
-    constexpr std::string_view t_function_name = get_function_name<T>();
+#if defined(_MSC_VER) && !defined(__clang__)
+    // tested on MSVC v19.44 VS17.14 - https://godbolt.org/z/GTGncrjPo
+
+    constexpr size_t end_index = t_function_name.rfind(">(");
+    static_assert(end_index != std::string_view::npos, "Possible that compiler changed how std::source_location works. Please revisit me!");
+    // might have "class " word in the function name. we should remove it
+    constexpr std::string_view class_word = "class ";
+    constexpr size_t class_index = t_function_name.find(class_word, start_index);
+    constexpr size_t offset_value = class_index != std::string_view::npos ? class_word.size() : 0;
+    return t_function_name.substr(start_index + offset_value, end_index - start_index - offset_value);
+
+#else
+    // tested on GCC 15.1 and Clang 21.1.0 - https://godbolt.org/z/GTGncrjPo
+
     constexpr size_t end_index = t_function_name.find(']', start_index);
     static_assert(end_index != std::string_view::npos, "Possible that compiler changed how std::source_location works. Please revisit me!");
-
     return t_function_name.substr(start_index, end_index - start_index);
+
+#endif
 }
 
 // this removes the namespaces
