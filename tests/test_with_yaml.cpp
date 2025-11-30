@@ -52,7 +52,7 @@ concept same_as_optional = detail::is_optional<std::remove_cvref_t<T>>::value;
 // setup for serializing yaml string to a type with reflection
 namespace YAML {
 
-template <std::default_initializable T>
+template <::reflect::concepts::reflectable T>
 struct convert<T>
 {
     static Node encode(const T& obj)

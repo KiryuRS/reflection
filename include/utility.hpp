@@ -17,6 +17,7 @@ consteval std::string_view get_name()
     constexpr std::string_view void_function_name = get_function_name<void>();
     constexpr size_t start_index = void_function_name.find("void");
     static_assert(start_index != std::string_view::npos, "Possible that compiler changed how std::source_location works. Please revisit me!");
+    constexpr std::string_view t_function_name = get_function_name<T>();
 
 #if defined(_MSC_VER) && !defined(__clang__)
     // tested on MSVC v19.44 VS17.14 - https://godbolt.org/z/GTGncrjPo

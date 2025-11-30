@@ -89,7 +89,6 @@ TEST(test_reflection, test_class_traits_should_remain_same)
 
 TEST(test_reflection, test_generate_meta_info)
 {
-
     // should be able to use aggregate initialization and constexpr
     constexpr mocks::foo f1{.l = 100, .i = 99, .s = 98, .c = 'A'};
     constexpr mocks::foo f2 = f1;
