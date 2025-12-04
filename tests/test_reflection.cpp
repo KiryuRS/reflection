@@ -1,3 +1,4 @@
+#include "../include/enum.hpp"
 #include "../include/reflect.hpp"
 
 #include <gtest/gtest.h>
@@ -5,6 +6,27 @@
 namespace tests {
 
 namespace mocks {
+
+enum class some_enum : uint16_t
+{
+    NONE = 0,
+    VALUE_0,
+    VALUE_1,
+    VALUE_2,
+    VALUE_3,
+};
+
+enum class another_enum : uint16_t
+{
+    NONE = 0,
+    OFFICIAL,
+    UNOFFICIAL,
+};
+
+ENUM_PRINTABLE(mocks::some_enum, (VALUE_0, VALUE_1, VALUE_2, VALUE_3));
+ENUM_PRINTABLE(mocks::another_enum, (OFFICIAL, UNOFFICIAL));
+
+// enums must be "reflectable" first
 
 struct foo_no_reflect
 {
@@ -18,6 +40,7 @@ struct bar_no_reflect
 {
     std::string_view str_view1;
     std::string_view str_view2;
+    another_enum tag;
     double price;
 };
 
@@ -41,9 +64,10 @@ struct bar
 {
     std::string_view str_view1;
     std::string_view str_view2;
+    another_enum tag;
     double price;
 
-    REFLECT(bar, (str_view1, str_view2, price)); // used when we want reflection + printable + other encapsulated logic
+    REFLECT(bar, (str_view1, str_view2, tag, price)); // used when we want reflection + printable + other encapsulated logic
 };
 
 struct baz
@@ -62,6 +86,21 @@ struct goo
 };
 
 } // namespace mocks
+
+TEST(test_enum, test_roundtrip)
+{
+    const auto e0 = mocks::some_enum::VALUE_1;
+    const auto value0 = enum_to_string(e0);
+    EXPECT_EQ(e0, string_to_enum(mocks::some_enum{}, value0));
+
+    std::cout << std::format("{}\n", e0);
+
+    const auto e1 = mocks::another_enum::UNOFFICIAL;
+    const auto value1 = enum_to_string(e1);
+    EXPECT_EQ(e1, string_to_enum(mocks::another_enum{}, value1));
+
+    std::cout << e1 << '\n';
+}
 
 TEST(test_reflection, test_class_traits_should_remain_same)
 {
@@ -101,7 +140,7 @@ TEST(test_reflection, test_generate_meta_info)
 TEST(test_reflection, test_reflect)
 {
     // should be possible to use aggregate initialization and constexpr
-    constexpr mocks::bar b1{.str_view1 = "Hello World", .str_view2 = "Some static very long long long long string", .price = 69.0};
+    constexpr mocks::bar b1{.str_view1 = "Hello World", .str_view2 = "Some static very long long long long string", .tag = mocks::another_enum::OFFICIAL, .price = 69.0};
     constexpr mocks::bar b2 = b1;
 
     EXPECT_EQ(to_string(b1), to_string(b2));
@@ -115,7 +154,7 @@ TEST(test_reflection, test_reflect)
 TEST(test_reflection, test_formatter)
 {
     [[maybe_unused]] constexpr mocks::foo f1{.l = 100, .i = 99, .s = 98, .c = 'A'};
-    constexpr mocks::bar b1{.str_view1 = "Hello World", .str_view2 = "Some static very long long long long string", .price = 69.0};
+    constexpr mocks::bar b1{.str_view1 = "Hello World", .str_view2 = "Some static very long long long long string", .tag = mocks::another_enum::OFFICIAL, .price = 69.0};
     constexpr mocks::baz bb1{.b = b1, .f = 3.14f};
 
     std::cout << std::format("{}\n", b1);

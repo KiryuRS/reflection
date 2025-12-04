@@ -67,7 +67,7 @@ constexpr void for_each(Functor&& func)
     // unfortunately the existing range-based for loop (pre C++26) does not have constexpr support,
     // so we use the traditional lambda + variadic to loop through all of the meta types.
     // ideally what we want is:
-    // for template (auto meta : generate_meta_info<T>())
+    // template for (auto meta : generate_meta_info<T>())
     // {
     //     constexpr auto descriptor = get_descriptor<meta>();
     //     ... // do something with the descriptor
@@ -116,6 +116,11 @@ constexpr void for_each(Functor&& func)
         return ::reflect::detail::meta_type_info<Class, meta>;                                                          \
     }
 
+/* To be used within REFLECT macro */
+#define OSTREAM_PRINT(_, value)                                                             \
+    oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
+        << PP_STRINGIZE(value) << "': " << object.value;
+
 #define REFLECT(Class, ...) \
     GENERATE_META_INFO(Class, __VA_ARGS__)                                                          \
     /* Other useful reflection helper functions. e.g. operator<< overload, to_string */             \
@@ -124,10 +129,7 @@ constexpr void for_each(Functor&& func)
         std::stringstream oss;                                                                      \
         const char* delimiter = "";                                                                 \
         oss << '{' << PP_STRINGIZE(Class) << ": {";                                                 \
-        ::reflect::for_each<Class>([&oss, &delimiter, &object] <typename Descriptor> () {           \
-            oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
-                << Descriptor::name << "': " << ::reflect::get_member_variable<Descriptor>(object); \
-        });                                                                                         \
+        PP_FOR_EACH(OSTREAM_PRINT, _, PP_EVAL_TUPLE(__VA_ARGS__))                                   \
         oss << "} }";                                                                               \
         return oss.str();                                                                           \
     }                                                                                               \

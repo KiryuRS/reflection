@@ -25,6 +25,15 @@ struct is_array_type<std::array<T, N>> : std::true_type
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept same_as_array_type = detail::is_array_type<RawT>::value;
 
+template <typename T, typename RawT = std::remove_cvref_t<T>>
+concept stringable = std::same_as<RawT, std::string_view> || std::same_as<std::string, RawT> || std::same_as<const char*, RawT>;
+
+template <typename T>
+concept enumerable = requires {
+    requires std::is_enum_v<T>;
+    { T::NONE } -> std::same_as<T>;
+};
+
 template <typename Functor, typename ArgT>
 concept template_only_invocable = requires { std::declval<Functor>().template operator()<ArgT>(); };
 

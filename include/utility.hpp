@@ -1,6 +1,7 @@
 #pragma once
 
 #include <source_location>
+#include <string>
 #include <string_view>
 
 namespace reflect::utility {
@@ -61,6 +62,14 @@ consteval std::string_view get_short_name()
             pos = i;
     }
     return pos == std::string_view::npos ? full_type : full_type.substr(pos + 1);
+}
+
+constexpr unsigned long hash_dj2ba(std::string_view str)
+{
+    unsigned long hash = 5381;
+    for (int c : str)
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    return hash;
 }
 
 } // namespace reflect::utility

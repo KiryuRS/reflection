@@ -33,7 +33,7 @@ function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
             -fexceptions
             -fstrict-aliasing
             -fdiagnostics-color=always
-            # -fconcepts-diagnostics-depth=5
+            -fconcepts-diagnostics-depth=5
     )
 
         # optimization flags
