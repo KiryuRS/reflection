@@ -61,7 +61,7 @@ This can also be further taken advantaged of by implementing your own serializat
 Note that, adding reflection to any user defined type will **not**:
 
 * Change the behavior of the type _(e.g. aggregated type will remain as aggregated type)_
-* Size of the type
+* Change the size of the type
 
 And it allows for encapsulation:
 
