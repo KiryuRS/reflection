@@ -58,10 +58,13 @@ Using compile time reflection helps to reduce runtime costs. The trade-off to th
   
 This can also be further taken advantaged of by implementing your own serialization of a config type to C++ type. _(see `test_with_yaml.cpp` for simple integration with yaml-cpp for YAML -> C++)_  
   
-Note that, adding reflection to any user defined type will not:
+Note that, adding reflection to any user defined type will **not**:
 
 * Change the behavior of the type _(e.g. aggregated type will remain as aggregated type)_
-* Size of the type will not change
+* Size of the type
+
+And it allows for encapsulation:
+
 * All reflection logic are contained within the type itself _(with the exception of enums)_
 * Similar to `virtual`, you only activate `reflection` when you need it. It is disabled by default.
 
