@@ -22,14 +22,14 @@ A descriptor can be seen as a struct that captures all information required at z
 This means everything must be using `static constexpr` variables and `using` type alias keywords. For example, `std::string str` for type `foo`:
 
 ```c++
-struct some_descriptor
+struct some_unique_descriptor
 {
     using class_type = foo;
     using member_type = std::basic_string<char>;
     using member_pointer_type = std::basic_string<char> foo::*;
 
     static constexpr std::string_view name = "str";
-    static constexpr std::string member_type_name = "std::basic_string<char>";
+    static constexpr std::string_view member_type_name = "std::basic_string<char>";
     static constexpr member_pointer_type member_pointer = &foo::str;
 };
 ```
