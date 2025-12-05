@@ -36,18 +36,15 @@ struct some_unique_descriptor
 
 ### Descriptors Container
 
-Depending on implementation, the container to hold all of the descriptors may vary. If the descriptor is based off templates,  
-this means each instantiation is a different type. Hence one possible container to hold them is `std::tuple`.  
+Depending on implementation, the container to hold all of the descriptors may vary. If the descriptor is based off templates, this means each instantiation is a different type. Hence one possible container to hold them is `std::tuple`.  
   
-But this version also implements a meta id mapping. Means each descriptor maps to an ID which has the same type throughout.  
-Which will be possible to store them into an `std::array`
+But this version also implements a meta id mapping. Means each descriptor maps to an ID which has the same type throughout. Which will be possible to store them into an `std::array`
 
 ### Traversing the Descriptors Container
 
 With the container implemented, we can traverse the container to obtain each descriptor and use it for the application logic.  
   
-Unfortunately there is no way to traverse the container using the regular for-loop or ranged based for-loop,  
-hence there will be a need to implement a visitor on the container, similar to `std::for_each`. For instance:
+Unfortunately there is no way to traverse the container using the regular for-loop or ranged based for-loop, hence there will be a need to implement a visitor on the container, similar to `std::for_each`. For instance:
 
 ```c++
 reflect::for_each<foo>([] <typename Descriptor>() {
