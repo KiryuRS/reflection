@@ -7,7 +7,7 @@ The library mainly focuses on public _(attribute)_ only member variables reflect
 
 # Overview
 
-This version adhere of the following principles for building the system:
+This version adheres to the following principles:
 
 * _something_ to explain or describe the attributes of a member variable _(e.g. type, name of the type, name of variable, etc.)_, we call this a `Descriptor`
 * _some_ container to store all of the descriptors
