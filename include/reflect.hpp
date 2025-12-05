@@ -96,7 +96,7 @@ constexpr void for_each(Functor&& func)
 #define GENERATE_DESCRIPTOR(Class, Member)                                                              \
     struct PP_CREATE_CLASS_NAME(descriptor, Class, Member)                                              \
     {                                                                                                   \
-        using class_type = Class;                                                                       \
+        using class_type = struct Class;                                                                \
         using member_type = decltype(Class::Member);                                                    \
         using member_pointer_type = member_type Class::*;                                               \
                                                                                                         \
@@ -107,24 +107,24 @@ constexpr void for_each(Functor&& func)
 
 #define GENERATE_MEMBER_META_INFO(Class, Member) ::reflect::detail::meta_type_info<PP_CREATE_CLASS_NAME(descriptor, Class, Member)>,
 
-#define GENERATE_META_INFO(Class, ...)                                                                                  \
+#define REFLECT(Class, ...)                                                                                             \
     PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EVAL_TUPLE(__VA_ARGS__))                                                 \
     static consteval auto meta_info_array_as_id()                                                                       \
     {                                                                                                                   \
         /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */               \
         static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EVAL_TUPLE(__VA_ARGS__))};    \
-        return ::reflect::detail::meta_type_info<Class, meta>;                                                          \
+        return ::reflect::detail::meta_type_info<struct Class, meta>;                                                   \
     }
 
-/* To be used within REFLECT macro */
+/* To be used within REFLECT_PRINTABLE macro */
 #define OSTREAM_PRINT(_, value)                                                             \
     oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
-        << PP_STRINGIZE(value) << "': " << object.value;
+        << PP_STRINGIZE(value) << "': " << object.value;                                    \
 
-#define REFLECT(Class, ...) \
-    GENERATE_META_INFO(Class, __VA_ARGS__)                                                          \
+#define REFLECT_PRINTABLE(Class, ...)                                                               \
+    REFLECT(Class, __VA_ARGS__)                                                                     \
     /* Other useful reflection helper functions. e.g. operator<< overload, to_string */             \
-    friend std::string to_string(const Class& object)                                               \
+    friend std::string to_string(const struct Class& object)                                        \
     {                                                                                               \
         std::stringstream oss;                                                                      \
         const char* delimiter = "";                                                                 \
@@ -134,7 +134,7 @@ constexpr void for_each(Functor&& func)
         return oss.str();                                                                           \
     }                                                                                               \
                                                                                                     \
-    friend std::ostream& operator<<(std::ostream& os, const Class& object)                          \
+    friend std::ostream& operator<<(std::ostream& os, const struct Class& object)                   \
     {                                                                                               \
         return os << to_string(object);                                                             \
     }

@@ -114,6 +114,7 @@ struct convert<T>
 
 } // namespace YAML
 
+
 namespace tests {
 
 template <reflect::concepts::reflectable T>
@@ -135,6 +136,7 @@ std::string yaml_serialize(const T& obj)
     return oss.str();
 }
 
+
 namespace mocks {
 
 struct built_in_types
@@ -148,7 +150,7 @@ struct built_in_types
     // for unit-testing
     auto operator<=>(const built_in_types&) const = default;
 
-    GENERATE_META_INFO(built_in_types, (floating_value, integer_value, char_value, double_value, long_value));
+    REFLECT(built_in_types, (floating_value, integer_value, char_value, double_value, long_value));
 };
 
 struct simple
@@ -158,7 +160,7 @@ struct simple
     // for unit-testing
     auto operator<=>(const simple&) const = default;
 
-    GENERATE_META_INFO(simple, (value_1));
+    REFLECT(simple, (value_1));
 };
 
 struct complex_types
@@ -174,7 +176,7 @@ struct complex_types
     // for unit-testing
     auto operator<=>(const complex_types&) const = default;
 
-    GENERATE_META_INFO(complex_types, (vector, string, unordered_map, optional, empty_vector, empty_optional, s));
+    REFLECT(complex_types, (vector, string, unordered_map, optional, empty_vector, empty_optional, s));
 };
 
 } // namespace mocks

@@ -57,7 +57,7 @@ struct foo
     short s;
     char c;
 
-    GENERATE_META_INFO(foo, (l, i, s, c)); // used when we just want the bare reflection
+    REFLECT(foo, (l, i, s, c)); // used when we just want the bare reflection
 };
 
 struct bar
@@ -67,7 +67,7 @@ struct bar
     another_enum tag;
     double price;
 
-    REFLECT(bar, (str_view1, str_view2, tag, price)); // used when we want reflection + printable + other encapsulated logic
+    REFLECT_PRINTABLE(bar, (str_view1, str_view2, tag, price)); // used when we want reflection + printable + other encapsulated logic
 };
 
 struct baz
@@ -75,7 +75,15 @@ struct baz
     bar b;
     float f;
 
-    REFLECT(baz, (f, b));
+    REFLECT_PRINTABLE(baz, (f, b));
+};
+
+struct fooz
+{
+    int fooz;
+    another_enum ae;
+
+    REFLECT_PRINTABLE(fooz, (fooz, ae)); // even with member variable named as the class, reflection still works
 };
 
 struct goo
@@ -149,6 +157,12 @@ TEST(test_reflection, test_reflect)
     constexpr mocks::baz bb2{.b = b1, .f = 3.14f};
 
     EXPECT_EQ(to_string(bb1), to_string(bb2));
+
+    constexpr mocks::fooz fz1{.fooz = 100, .ae = mocks::another_enum::OFFICIAL};
+
+    std::cout << fz1 << '\n';
+
+    // reflect::for_each<mocks::goo>([] (auto) {}); // should not compile because there's no meta generated for goo!
 }
 
 TEST(test_reflection, test_formatter)
@@ -160,11 +174,6 @@ TEST(test_reflection, test_formatter)
     std::cout << std::format("{}\n", b1);
     std::cout << std::format("{}\n", bb1);
     // std::cout << std::format("{}\n", f1); // should not compile because to_string is not defined!
-}
-
-TEST(test_reflection, test_not_in_scope)
-{
-    // reflect::for_each<mocks::goo>([] (auto) {}); // should not compile because there's no meta generated for goo!
 }
 
 } // namespace tests

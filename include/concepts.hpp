@@ -28,10 +28,10 @@ concept same_as_array_type = detail::is_array_type<RawT>::value;
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept stringable = std::same_as<RawT, std::string_view> || std::same_as<std::string, RawT> || std::same_as<const char*, RawT>;
 
-template <typename T>
+template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept enumerable = requires {
-    requires std::is_enum_v<T>;
-    { T::NONE } -> std::same_as<T>;
+    requires std::is_enum_v<RawT>;
+    { RawT::NONE } -> std::same_as<RawT>;
 };
 
 template <typename Functor, typename ArgT>
@@ -55,13 +55,13 @@ concept descriptor_like = requires {
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflectable = requires {
-    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>; // did you forget to use GENERATE_META_INFO / REFLECT macro?
+    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>; // did you forget to use REFLECT / REFLECT macro?
 };
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflect_and_printable = requires {
     requires reflectable<RawT>;
-    { to_string(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT macro?
+    { to_string(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT_PRINTABLE macro?
 };
 
 } // namespace reflect::concepts
