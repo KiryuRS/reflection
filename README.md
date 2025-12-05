@@ -77,6 +77,7 @@ There are two version of reflection in this library. `REFLECT` and `REFLECT_PRIN
 `REFLECT` provides the bare metal of reflection. When used, the type gains the ability to use the following functions:
 
 * `reflect::generate_meta_info<T>`
+* `reflect::get_member_variable<Descriptor>(T&&)`
 * `reflect::for_each<T>(...)`
 
 The first one returns you an array of meta ids. Each meta id maps to a descriptor.  
