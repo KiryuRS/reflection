@@ -62,6 +62,7 @@ template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflect_and_printable = requires {
     requires reflectable<RawT>;
     { to_string(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT_PRINTABLE macro?
+    { print_meta(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT_PRINTABLE macro?
 };
 
 } // namespace reflect::concepts

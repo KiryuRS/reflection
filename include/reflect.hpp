@@ -124,9 +124,22 @@ constexpr void for_each(Functor&& func)
 #define REFLECT_PRINTABLE(Class, ...)                                                               \
     REFLECT(Class, __VA_ARGS__)                                                                     \
     /* Other useful reflection helper functions. e.g. operator<< overload, to_string */             \
+    friend std::string print_meta(const struct Class& object)                                       \
+    {                                                                                               \
+        std::ostringstream oss;                                                                     \
+        const char* delimiter = "";                                                                 \
+        oss << "struct " << PP_STRINGIZE(Class) << " has the following reflected variables:\n";     \
+        ::reflect::for_each<struct Class>([&oss, &object, &delimiter] <typename Descriptor> () {    \
+            oss << std::exchange(delimiter, "\n") << "  "                                           \
+                << Descriptor::mem_type_str << " " << Descriptor::name << " = "                     \
+                << ::reflect::get_member_variable<Descriptor>(object);                              \
+        });                                                                                         \
+        return oss.str();                                                                           \
+    }                                                                                               \
+                                                                                                    \
     friend std::string to_string(const struct Class& object)                                        \
     {                                                                                               \
-        std::stringstream oss;                                                                      \
+        std::ostringstream oss;                                                                     \
         const char* delimiter = "";                                                                 \
         oss << '{' << PP_STRINGIZE(Class) << ": {";                                                 \
         PP_FOR_EACH(OSTREAM_PRINT, _, PP_EVAL_TUPLE(__VA_ARGS__))                                   \

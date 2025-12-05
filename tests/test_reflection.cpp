@@ -162,6 +162,8 @@ TEST(test_reflection, test_reflect)
 
     std::cout << fz1 << '\n';
 
+    std::cout << print_meta(b1) << '\n';
+
     // reflect::for_each<mocks::goo>([] (auto) {}); // should not compile because there's no meta generated for goo!
 }
 
