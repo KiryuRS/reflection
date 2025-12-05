@@ -52,9 +52,13 @@ reflect::for_each<foo>([] <typename Descriptor>() {
 });
 ```
 
-## Benefits of Reflection
+## Benefits of Compile Time Reflection
 
-Adding reflection to any user defined type will not:
+Using compile time reflection helps to reduce runtime costs. The trade-off to this approach is that the compilation time may increase due to the amount of compile time code that needs to be generated.  
+  
+This can also be further taken advantaged of by implementing your own serialization of a config type to C++ type. _(see `test_with_yaml.cpp` for simple integration with yaml-cpp for YAML -> C++)_  
+  
+Note that, adding reflection to any user defined type will not:
 
 * Change the behavior of the type _(e.g. aggregated type will remain as aggregated type)_
 * Size of the type will not change
