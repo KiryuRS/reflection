@@ -6,24 +6,21 @@ FROM ubuntu:24.04
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     # Basic tools
-    curl \
     wget \
-    git \
     build-essential \
-    software-properties-common \
     ca-certificates \
     gnupg \
-    lsb-release \
     # Python 3 and pip for Conan
     python3 \
     python3-pip \
-    python3-venv \
     # Additional build tools
     ninja-build \
     && rm -rf /var/lib/apt/lists/*
 
 # Install GCC 14 from Ubuntu toolchain PPA
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
+RUN apt-get update && \
+    apt-get install -y software-properties-common && \
+    add-apt-repository ppa:ubuntu-toolchain-r/test && \
     apt-get update && \
     apt-get install -y gcc-14 g++-14 && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100 && \
