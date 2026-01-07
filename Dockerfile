@@ -3,10 +3,6 @@
 
 FROM ubuntu:24.04
 
-# Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Asia/Singapore
-
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     # Basic tools
@@ -34,9 +30,6 @@ RUN add-apt-repository ppa:ubuntu-toolchain-r/test && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100 && \
     rm -rf /var/lib/apt/lists/*
 
-# Verify GCC installation
-RUN gcc --version
-
 # Install CMake 4.1.2
 RUN wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-linux-x86_64.tar.gz && \
     tar -xzf cmake-4.1.2-linux-x86_64.tar.gz && \
@@ -46,14 +39,8 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v4.1.2/cmake-4.1.2-l
     ln -sf /opt/cmake/bin/cpack /usr/local/bin/cpack && \
     rm cmake-4.1.2-linux-x86_64.tar.gz
 
-# Verify CMake installation
-RUN cmake --version
-
 # Install Conan 2.x
 RUN pip3 install --break-system-packages conan==2.*
-
-# Verify Conan installation and create default profile
-RUN conan --version && conan profile detect
 
 # Set working directory
 WORKDIR /app
@@ -63,10 +50,6 @@ COPY . /app
 
 # Make conan_build.sh executable
 RUN chmod +x /app/conan_build.sh
-
-# Set ulimit for stack size (as specified in conan_build.sh)
-RUN echo "* soft stack unlimited" >> /etc/security/limits.conf && \
-    echo "* hard stack unlimited" >> /etc/security/limits.conf
 
 # Build and run tests
 CMD ["/app/conan_build.sh"]
