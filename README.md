@@ -14,13 +14,6 @@ This version adheres to the following principles:
 * _some ways_ to traverse through all of the descriptors from the container
 * this container should _ideally_ be able to traverse the descriptors at compile time, using `template for` (C++ 26 feature)
 
-## Docker Run
-
-```bash
-docker build -t ctreflect .
-docker run --rm ctreflect
-```
-
 ## Principles
 
 ### Descriptor
@@ -160,4 +153,55 @@ int main(void)
     // OR
     std::cout << std::format("{}\n", pos);
 }
+```
+
+# Docker
+
+### Building the Docker Image
+
+```bash
+# Build the Docker image
+docker build -t reflection-library .
+
+# Or build with a specific tag
+docker build -t reflection-library:latest .
+```
+
+### Running Tests in Docker
+
+```bash
+# Run the build and tests in a container
+docker run --rm reflection-library
+
+# Run with interactive mode for debugging
+docker run -it --rm reflection-library /bin/bash
+
+# Run specific tests after entering the container
+./conan_build.sh
+```
+
+### Development with Docker
+
+```bash
+# Mount local source code and run interactively
+docker run -it --rm -v $(pwd):/app reflection-library /bin/bash
+
+# Inside the container, you can:
+cd /app
+./conan_build.sh  # Build and run tests
+```
+
+### Docker Compose (if available)
+
+If a `docker-compose.yml` file exists:
+
+```bash
+# Build and run all services
+docker-compose up --build
+
+# Run only the reflection service
+docker-compose up reflection-service
+
+# Run tests
+docker-compose run reflection-service ./conan_build.sh
 ```
