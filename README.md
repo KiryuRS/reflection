@@ -14,6 +14,13 @@ This version adheres to the following principles:
 * _some ways_ to traverse through all of the descriptors from the container
 * this container should _ideally_ be able to traverse the descriptors at compile time, using `template for` (C++ 26 feature)
 
+## Docker Run
+
+```bash
+docker build -t ctreflect .
+docker run --rm ctreflect
+```
+
 ## Principles
 
 ### Descriptor
