@@ -3,18 +3,19 @@
 #include "../reflect/concepts.hpp"
 #include "concepts.hpp"
 
-#include <sstream>
 #include <ranges>
 #include <optional>
+#include <sstream>
 #include <string_view>
 #include <vector>
 
 namespace argparse::convertors {
 
 template <typename T>
-constexpr std::optional<T> parse_value(std::string_view value)
+constexpr std::optional<T> parse_value(std::string_view)
 {
     static_assert(false, "type not implemented!");
+    return {};
 }
 
 template <typename T>
@@ -52,6 +53,14 @@ template <::reflect::concepts::stringable T>
 constexpr std::optional<T> parse_value(std::string_view value)
 {
     return T{value};
+}
+
+template <concepts::same_as_optional T>
+constexpr T parse_value(std::string_view value)
+{
+    using value_type = typename T::value_type;
+    const auto val = parse_value<value_type>(value);
+    return val;
 }
 
 template <concepts::same_as_vector T>

@@ -109,11 +109,15 @@ constexpr void for_each(Functor&& func)
 
 #define REFLECT(Class, ...)                                                                                             \
     PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EVAL_TUPLE(__VA_ARGS__))                                                 \
-    static consteval auto meta_info_array_as_id()                                                                       \
+    static consteval auto meta_info_array()                                                                             \
     {                                                                                                                   \
         /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */               \
         static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EVAL_TUPLE(__VA_ARGS__))};    \
-        return ::reflect::detail::meta_type_info<struct Class, meta>;                                                   \
+        return meta;                                                                                                    \
+    }                                                                                                                   \
+    static consteval auto meta_info_array_as_id()                                                                       \
+    {                                                                                                                   \
+        return ::reflect::detail::meta_type_info<struct Class, meta_info_array()>;                                      \
     }
 
 /* To be used within REFLECT_PRINTABLE macro */
