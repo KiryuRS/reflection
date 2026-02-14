@@ -59,8 +59,7 @@ template <concepts::same_as_optional T>
 constexpr T parse_value(std::string_view value)
 {
     using value_type = typename T::value_type;
-    const auto val = parse_value<value_type>(value);
-    return val;
+    return parse_value<value_type>(value);
 }
 
 template <concepts::same_as_vector T>
