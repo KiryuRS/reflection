@@ -1,5 +1,5 @@
-#include "../include/enum.hpp"
-#include "../include/reflect.hpp"
+#include "../include/reflect/enum.hpp"
+#include "../include/reflect/reflect.hpp"
 
 #include <gtest/gtest.h>
 
