@@ -75,7 +75,7 @@ constexpr std::optional<T> parse_value(std::string_view value)
     auto parsed_values = value | std::views::split(","sv)
                                | std::views::transform([&parsed_fail, &default_value](auto subrange) -> value_type {
                                    std::string_view str{subrange.begin(), subrange.end()};
-                                   auto val = parse_value<value_type>(str);
+                                   const auto val = parse_value<value_type>(str);
                                    parsed_fail |= !val.has_value();
                                    return val.value_or(default_value);
                                  })
