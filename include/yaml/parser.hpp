@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-namespace reflect::yaml {
+namespace yaml {
 
 template <reflect::concepts::reflectable T>
 T deserialize(const std::string& yaml_config_str)
@@ -25,4 +25,4 @@ std::string serialize(const T& obj)
     return oss.str();
 }
 
-} // namespace reflect::yaml
+} // namespace yaml

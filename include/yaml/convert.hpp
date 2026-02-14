@@ -17,13 +17,13 @@ struct convert<T>
             using member_type = typename Descriptor::member_type;
             const auto& member = ::reflect::get_member_variable<Descriptor>(obj);
 
-            if constexpr (reflect::yaml::concepts::container_like<member_type>)
+            if constexpr (::yaml::concepts::container_like<member_type>)
             {
                 if (member.empty())
                     return;
                 node[Descriptor::name] = member;
             }
-            else if constexpr (reflect::yaml::concepts::same_as_optional<member_type>)
+            else if constexpr (::yaml::concepts::same_as_optional<member_type>)
             {
                 if (!member)
                     return;
@@ -45,13 +45,13 @@ struct convert<T>
             using member_type = typename Descriptor::member_type;
             auto& member = ::reflect::get_member_variable<Descriptor>(obj);
 
-            if constexpr (reflect::yaml::concepts::container_like<member_type>)
+            if constexpr (::yaml::concepts::container_like<member_type>)
             {
                 if (!node[Descriptor::name])
                     return;
                 member = node[Descriptor::name].template as<member_type>();
             }
-            else if constexpr (reflect::yaml::concepts::same_as_optional<member_type>)
+            else if constexpr (::yaml::concepts::same_as_optional<member_type>)
             {
                 if (!node[Descriptor::name])
                     return;

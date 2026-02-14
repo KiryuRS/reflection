@@ -77,7 +77,7 @@ constexpr T parse_args(int argc, const char* argv[])
     const std::vector<std::string_view> vectorized_args{argv, argv + argc};
 
     // TODO: use inplace_vector from C++26
-    std::array<detail::arg_supplied_info, T::meta_info_array().size()> args_supplied;
+    std::array<detail::arg_supplied_info, ::reflect::generate_meta_info<T>().size()> args_supplied;
 
     T parsed{};
 

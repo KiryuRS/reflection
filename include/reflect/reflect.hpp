@@ -109,21 +109,17 @@ constexpr void for_each(Functor&& func)
 
 #define REFLECT(Class, ...)                                                                                             \
     PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EVAL_TUPLE(__VA_ARGS__))                                                 \
-    static consteval auto meta_info_array()                                                                             \
+    static consteval auto meta_info_array_as_id()                                                                       \
     {                                                                                                                   \
         /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */               \
         static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EVAL_TUPLE(__VA_ARGS__))};    \
-        return meta;                                                                                                    \
-    }                                                                                                                   \
-    static consteval auto meta_info_array_as_id()                                                                       \
-    {                                                                                                                   \
-        return ::reflect::detail::meta_type_info<struct Class, meta_info_array()>;                                      \
+        return ::reflect::detail::meta_type_info<struct Class, meta>;                                                   \
     }
 
 /* To be used within REFLECT_PRINTABLE macro */
 #define OSTREAM_PRINT(_, value)                                                             \
     oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
-        << PP_STRINGIZE(value) << "': " << object.value;                                    \
+        << PP_STRINGIZE(value) << "': " << object.value;
 
 #define REFLECT_PRINTABLE(Class, ...)                                                               \
     REFLECT(Class, __VA_ARGS__)                                                                     \

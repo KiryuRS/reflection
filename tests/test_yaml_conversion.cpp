@@ -66,7 +66,7 @@ built_in_types:
     long_value: 99712
 )";
 
-    const auto converted = ::reflect::yaml::deserialize<mocks::built_in_types>(yaml_str);
+    const auto converted = ::yaml::deserialize<mocks::built_in_types>(yaml_str);
     constexpr mocks::built_in_types expected{.floating_value = 111.2f, .integer_value = 20, .char_value = 'A', .double_value = 3.14, .long_value = 99712};
     EXPECT_EQ(converted, expected);
 }
@@ -85,7 +85,7 @@ complex_types:
     optional: 69.69
 )";
 
-    const auto converted = ::reflect::yaml::deserialize<mocks::complex_types>(yaml_str);
+    const auto converted = ::yaml::deserialize<mocks::complex_types>(yaml_str);
     EXPECT_THAT(converted.vector, ElementsAre(1, 2, 3, 4, 5));
     EXPECT_THAT(converted.unordered_map, UnorderedElementsAre(Pair(1, 10), Pair(2, 20)));
     EXPECT_EQ(converted.optional, std::optional<double>(69.69));
@@ -118,9 +118,9 @@ built_in_types:
     double_value: 770766.112
     long_value: 62660662
 )";
-    const auto converted = ::reflect::yaml::deserialize<mocks::built_in_types>(built_in_types_str);
-    const std::string yaml_str = ::reflect::yaml::serialize(converted);
-    const auto round_trip_converted = ::reflect::yaml::deserialize<mocks::built_in_types>(yaml_str);
+    const auto converted = ::yaml::deserialize<mocks::built_in_types>(built_in_types_str);
+    const std::string yaml_str = ::yaml::serialize(converted);
+    const auto round_trip_converted = ::yaml::deserialize<mocks::built_in_types>(yaml_str);
     EXPECT_EQ(converted, round_trip_converted);
 }
 
@@ -138,9 +138,9 @@ complex_types:
     empty_optional: 2
 )";
 
-    const auto converted = ::reflect::yaml::deserialize<mocks::complex_types>(complex_types_str);
-    const std::string yaml_str = ::reflect::yaml::serialize(converted);
-    const auto round_trip_converted = ::reflect::yaml::deserialize<mocks::complex_types>(yaml_str);
+    const auto converted = ::yaml::deserialize<mocks::complex_types>(complex_types_str);
+    const std::string yaml_str = ::yaml::serialize(converted);
+    const auto round_trip_converted = ::yaml::deserialize<mocks::complex_types>(yaml_str);
     EXPECT_EQ(converted, round_trip_converted);
 }
 

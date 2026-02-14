@@ -6,7 +6,7 @@
 #include <string_view>
 #include <utility>
 
-namespace reflect::yaml::concepts {
+namespace yaml::concepts {
 
 namespace detail {
 
@@ -37,4 +37,4 @@ concept container_like = requires(RawT)
 template <typename T>
 concept same_as_optional = detail::is_optional<std::remove_cvref_t<T>>::value;
 
-} // namespace reflect::yaml::concepts
+} // namespace yaml::concepts
