@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -euo pipefail
+
 ulimit -s unlimited
 APP_DATA_DIR=$(dirname "$(readlink -f "$0")")
 BUILD_DIR="$APP_DATA_DIR/build"
@@ -26,10 +28,4 @@ run() {
 }
 
 build $@
-
-if [ $? -eq 0 ]; then
-    run
-else
-    echo "Build failed! Not running unit-tests!"
-    exit -1
-fi
+run
