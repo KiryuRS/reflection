@@ -21,10 +21,16 @@ build() {
 # runs unit test
 run() {
     local BINARY_DIR="$BUILD_DIR/bin"
-    for test in "$BINARY_DIR/test_*"; do
-        echo "Running $test ..."
-        $test
+    pushd $BINARY_DIR > /dev/null
+
+    for test in *; do
+        if [[ $test == *"test_"* ]]; then
+            echo "Running $test ..."
+            ./$test
+        fi
     done
+
+    popd > /dev/null
 }
 
 build $@

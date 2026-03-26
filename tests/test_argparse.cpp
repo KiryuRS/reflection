@@ -21,7 +21,7 @@ struct arg_options
     bool enabled;
     std::vector<int> values;
 
-    REFLECT(arg_options, (pi, count, backup_type, enabled, values))
+    REFLECT(arg_options, (), (pi, count, backup_type, enabled, values))
 };
 
 struct arg_optional_options
@@ -30,7 +30,7 @@ struct arg_optional_options
     std::optional<std::string> backup_directory;
     std::optional<int> interval = 100;
 
-    REFLECT(arg_optional_options, (dummy, backup_directory, interval))
+    REFLECT(arg_optional_options, (), (dummy, backup_directory, interval))
 };
 
 } // namespace mocks

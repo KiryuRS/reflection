@@ -57,7 +57,7 @@ struct foo
     short s;
     char c;
 
-    REFLECT(foo, (l, i, s, c)); // used when we just want the bare reflection
+    REFLECT(foo, (), (l, i, s, c)); // used when we just want the bare reflection
 };
 
 struct bar
@@ -67,7 +67,7 @@ struct bar
     another_enum tag;
     double price;
 
-    REFLECT_PRINTABLE(bar, (str_view1, str_view2, tag, price)); // used when we want reflection + printable + other encapsulated logic
+    REFLECT_PRINTABLE(bar, (), (str_view1, str_view2, tag, price)); // used when we want reflection + printable + other encapsulated logic
 };
 
 struct baz
@@ -75,7 +75,7 @@ struct baz
     bar b;
     float f;
 
-    REFLECT_PRINTABLE(baz, (f, b));
+    REFLECT_PRINTABLE(baz, (), (f, b));
 };
 
 struct fooz
@@ -83,7 +83,7 @@ struct fooz
     int fooz;
     another_enum ae;
 
-    REFLECT_PRINTABLE(fooz, (fooz, ae)); // even with member variable named as the class, reflection still works
+    REFLECT_PRINTABLE(fooz, (), (fooz, ae)); // even with member variable named as the class, reflection still works
 };
 
 struct goo
@@ -91,6 +91,28 @@ struct goo
     long l;
     int i;
     std::string_view view;
+};
+
+struct base
+{
+    std::string str;
+    double d;
+
+    REFLECT_PRINTABLE(base, (), (str, d));
+};
+
+struct base_2
+{
+    char c;
+
+    REFLECT_PRINTABLE(base_2, (), (c));
+};
+
+struct derived_more : base, base_2
+{
+    int x;
+
+    REFLECT_PRINTABLE(derived_more, (base, base_2), (x));
 };
 
 } // namespace mocks
@@ -176,6 +198,18 @@ TEST(test_reflection, test_formatter)
     std::cout << std::format("{}\n", b1);
     std::cout << std::format("{}\n", bb1);
     // std::cout << std::format("{}\n", f1); // should not compile because to_string is not defined!
+}
+
+TEST(test_reflection, test_derived)
+{
+    mocks::derived_more dm;
+    dm.x = 100;
+    dm.c = 'A';
+    dm.str = "Hello World";
+    dm.d = 3.14;
+
+    std::cout << std::format("{}\n", dm);
+    std::cout << print_meta(dm) << '\n';
 }
 
 } // namespace tests

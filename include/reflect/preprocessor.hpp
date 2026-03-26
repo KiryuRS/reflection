@@ -3,6 +3,10 @@
 // concat 3 variables together to form a name. e.g. PP_CREATE_CLASS_NAME(foo, bar, baz) -> foo_bar_baz
 #define PP_CREATE_CLASS_NAME(x0, x1, x2) x0##_##x1##_##x2
 
+// remove tuple syntax. e.g. (foo, boo, baz) -> foo, boo, baz
+#define PP_STRIP(...)  __VA_ARGS__
+#define PP_EXPAND_STRIP(Tuple) PP_STRIP Tuple
+
 #define PP_STRINGIZE(x) #x
 #define PP_EXPAND(x) x
 
@@ -146,3 +150,7 @@
 // expand tuple into arguments, e.g. (foo, bar, baz) -> foo, bar, baz
 #define PP_EVAL_TUPLE_IMPL(...) __VA_ARGS__
 #define PP_EVAL_TUPLE(tuple) PP_EVAL_TUPLE_IMPL tuple
+
+// like PP_FOR_EACH but accepts a tuple and skips iteration entirely when tuple is ()
+#define PP_FOR_EACH_IN_TUPLE_IMPL(fn, arg0, ...) __VA_OPT__(PP_FOR_EACH(fn, arg0, __VA_ARGS__))
+#define PP_FOR_EACH_IN_TUPLE(fn, arg0, tuple) PP_FOR_EACH_IN_TUPLE_IMPL(fn, arg0, PP_EXPAND_STRIP(tuple))

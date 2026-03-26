@@ -24,7 +24,7 @@ struct built_in_types
     // for unit-testing
     auto operator<=>(const built_in_types&) const = default;
 
-    REFLECT(built_in_types, (floating_value, integer_value, char_value, double_value, long_value));
+    REFLECT(built_in_types, (), (floating_value, integer_value, char_value, double_value, long_value));
 };
 
 struct simple
@@ -34,7 +34,7 @@ struct simple
     // for unit-testing
     auto operator<=>(const simple&) const = default;
 
-    REFLECT(simple, (value_1));
+    REFLECT(simple, (), (value_1));
 };
 
 struct complex_types
@@ -50,7 +50,7 @@ struct complex_types
     // for unit-testing
     auto operator<=>(const complex_types&) const = default;
 
-    REFLECT(complex_types, (vector, string, unordered_map, optional, empty_vector, empty_optional, s));
+    REFLECT(complex_types, (), (vector, string, unordered_map, optional, empty_vector, empty_optional, s));
 };
 
 } // namespace mocks

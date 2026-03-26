@@ -106,14 +106,21 @@ constexpr void for_each(Functor&& func)
     };
 
 #define GENERATE_MEMBER_META_INFO(Class, Member) ::reflect::detail::meta_type_info<PP_CREATE_CLASS_NAME(descriptor, Class, Member)>,
+#define GET_META_INFO_ARRAY(_, Base) Base::meta_info_array(),
 
-#define REFLECT(Class, ...)                                                                                             \
-    PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EVAL_TUPLE(__VA_ARGS__))                                                 \
-    static consteval auto meta_info_array_as_id()                                                                       \
-    {                                                                                                                   \
-        /* generate our array of meta ids (of descriptors), then map it to a meta id to encapsulate it */               \
-        static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EVAL_TUPLE(__VA_ARGS__))};    \
-        return ::reflect::detail::meta_type_info<struct Class, meta>;                                                   \
+#define REFLECT(Class, Bases, Members)                                                                                      \
+    PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EXPAND_STRIP(Members))                                                       \
+    static consteval auto meta_info_array()                                                                                 \
+    {                                                                                                                       \
+        static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EXPAND_STRIP(Members))};          \
+        return meta;                                                                                                        \
+    }                                                                                                                       \
+                                                                                                                            \
+    static consteval auto meta_info_array_as_id()                                                                           \
+    {                                                                                                                       \
+        static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EXPAND_STRIP(Members))};          \
+        constexpr auto metas = ::reflect::utility::concat_arrays(PP_FOR_EACH_IN_TUPLE(GET_META_INFO_ARRAY, _, Bases) meta); \
+        return ::reflect::detail::meta_type_info<struct Class, metas>;                                                      \
     }
 
 /* To be used within REFLECT_PRINTABLE macro */
@@ -121,8 +128,11 @@ constexpr void for_each(Functor&& func)
     oss << std::fixed << std::setprecision(3) << std::exchange(delimiter, ", ") << "'"      \
         << PP_STRINGIZE(value) << "': " << object.value;
 
-#define REFLECT_PRINTABLE(Class, ...)                                                               \
-    REFLECT(Class, __VA_ARGS__)                                                                     \
+/* To be used within REFLECT_PRINTABLE macro */
+#define OSTREAM_PRINT_BASE(_, Base) oss << to_string(static_cast<Base>(object)) << ", ";
+
+#define REFLECT_PRINTABLE(Class, Bases, Members)                                                    \
+    REFLECT(Class, Bases, Members)                                                                  \
     /* Other useful reflection helper functions. e.g. operator<< overload, to_string */             \
     friend std::string print_meta(const struct Class& object)                                       \
     {                                                                                               \
@@ -142,7 +152,8 @@ constexpr void for_each(Functor&& func)
         std::ostringstream oss;                                                                     \
         const char* delimiter = "";                                                                 \
         oss << '{' << PP_STRINGIZE(Class) << ": {";                                                 \
-        PP_FOR_EACH(OSTREAM_PRINT, _, PP_EVAL_TUPLE(__VA_ARGS__))                                   \
+        PP_FOR_EACH_IN_TUPLE(OSTREAM_PRINT_BASE, _, Bases)                                          \
+        PP_FOR_EACH(OSTREAM_PRINT, _, PP_EXPAND_STRIP(Members))                                     \
         oss << "} }";                                                                               \
         return oss.str();                                                                           \
     }                                                                                               \

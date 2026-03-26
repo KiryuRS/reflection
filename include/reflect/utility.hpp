@@ -1,8 +1,11 @@
 #pragma once
 
+#include <concepts>
 #include <source_location>
 #include <string>
 #include <string_view>
+#include <type_traits>
+#include <utility>
 
 namespace reflect::utility {
 
@@ -70,6 +73,19 @@ constexpr unsigned long hash_dj2ba(std::string_view str)
     for (int c : str)
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
     return hash;
+}
+
+template <typename T, std::size_t ... Is>
+    requires std::destructible<T> && std::is_trivially_default_constructible_v<T>
+consteval std::array<T, (Is + ...)> concat_arrays(std::array<T, Is> ... arrays)
+{
+    std::array<T, (Is + ...)> result{};
+    auto concat = [&result, i = 0] (std::ranges::range auto array) mutable {
+        for (auto elem : array)
+            result[i++] = elem;
+    };
+    (concat(arrays), ...);
+    return result;
 }
 
 } // namespace reflect::utility

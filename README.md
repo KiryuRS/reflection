@@ -14,6 +14,12 @@ This version adheres to the following principles:
 * _some ways_ to traverse through all of the descriptors from the container
 * this container should _ideally_ be able to traverse the descriptors at compile time, using `template for` (C++ 26 feature)
 
+## Limitations
+
+* Enums implementation do not share the same underlying implementation with non-enum types
+* Does not work for member functions
+* Does not work for static member variables
+
 ## Principles
 
 ### Descriptor
@@ -93,7 +99,7 @@ struct position_info
     double buy_quantity;
     double sell_quantity;
 
-    REFLECT(position_info, (bod_position, position, buy_quantity, sell_quantity));
+    REFLECT(position_info, (), (bod_position, position, buy_quantity, sell_quantity));
 };
 
 int main(void)
@@ -140,13 +146,13 @@ struct position_info
     double buy_quantity;
     double sell_quantity;
 
-    REFLECT_PRINTABLE(position_info, (bod_position, position, buy_quantity, sell_quantity));
+    REFLECT_PRINTABLE(position_info, (), (bod_position, position, buy_quantity, sell_quantity));
 };
 
 int main(void)
 {
     constexpr position_info pos{.bod_position = 1.0, .position = 3.0, .buy_quantity = 4.0, .sell_quantity = 2.0};
-    
+
     std::cout << to_string(pos) << '\n'; // should not be used
     // OR
     std::cout << pos << '\n';
@@ -154,6 +160,56 @@ int main(void)
     std::cout << std::format("{}\n", pos);
 }
 ```
+
+## Reflecting Inherited Classes
+
+Both `REFLECT` and `REFLECT_PRINTABLE` accept a `Bases` tuple as their second argument. When a class inherits from one or more reflected base classes, passing them in the `Bases` tuple causes the derived class to include all base class members in its own reflection. The base classes must themselves be reflected before the derived class.
+
+```c++
+struct base
+{
+    std::string str;
+    double d;
+
+    REFLECT_PRINTABLE(base, (), (str, d));
+};
+
+struct base_2
+{
+    char c;
+
+    REFLECT_PRINTABLE(base_2, (), (c));
+};
+
+struct derived_more : base, base_2
+{
+    int x;
+
+    REFLECT_PRINTABLE(derived_more, (base, base_2), (x));
+};
+```
+
+When no base classes are involved, pass an empty tuple `()` as usual.
+
+`reflect::for_each<derived_more>` will iterate over all reflected members — those inherited from `base` and `base_2`, followed by `derived_more`'s own member `x`.
+
+```c++
+int main(void)
+{
+    derived_more dm{};
+    dm.str = "Hello World";
+    dm.d   = 3.14;
+    dm.c   = 'A';
+    dm.x   = 100;
+
+    std::cout << dm << '\n';
+    // {derived_more: {{base: {'str': Hello World, 'd': 3.140}}, {base_2: {'c': A}}, 'x': 100} }
+
+    std::cout << print_meta(dm) << '\n';
+}
+```
+
+> **Note:** Only public member variables of the base classes are included, consistent with the library's public-only reflection model. Base classes must be reflected with `REFLECT` or `REFLECT_PRINTABLE` prior to their use in a derived class's `Bases` tuple.
 
 # Docker
 
