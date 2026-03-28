@@ -33,7 +33,7 @@ The design is inspired by [C++26 `std::meta`](https://wg21.link/P2996) and [`BOO
 
 ## Examples
 
-> Try it live on Compiler Explorer (GCC 14, `-std=c++23`): [https://godbolt.org/z/dWesraofP](https://godbolt.org/z/dWesraofP)
+> Try it live on Compiler Explorer (GCC 15.2, `-std=c++23 -O3`): [godbolt link](https://godbolt.org/z/P9PbWs45h)
 
 ### `REFLECT` — bare-metal reflection
 
