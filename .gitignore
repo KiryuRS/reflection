@@ -1,6 +1,7 @@
 .vscode/
 build/
 CMakeUserPresets.json
+settings.local.json
 
 # zed
 .cache/

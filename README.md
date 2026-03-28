@@ -1,97 +1,47 @@
 
-# Compile Time Reflection 
+# Compile-Time Reflection
 
-Lightweight compile time reflection library that provides the bare metal for reflecting each member variable of a user defined type.  
-Inspiration mainly from C++26's `std::meta` feature and `BOOST_DESCRIBE_STRUCT` / `BOOST_DESCRIBE_CLASS`.  
-The library mainly focuses on public _(attribute)_ only member variables reflection, traversing through each reflected element and logging capabilities.
+A lightweight, header-only C++23 library for compile-time reflection of user-defined types.
+Reflect public member variables, iterate over them, and build powerful integrations — all with **zero runtime overhead**.
 
-# Overview
+---
 
-This version adheres to the following principles:
+## Overview
 
-* _something_ to explain or describe the attributes of a member variable _(e.g. type, name of the type, name of variable, etc.)_, we call this a `Descriptor`
-* _some_ container to store all of the descriptors
-* _some ways_ to traverse through all of the descriptors from the container
-* this container should _ideally_ be able to traverse the descriptors at compile time, using `template for` (C++ 26 feature)
+### Motivation
 
-## Limitations
+C++ has long lacked native reflection. Runtime approaches (type-erasure, virtual dispatch, external code generators) all impose a cost — either in performance, complexity, or build system friction.
 
-* Enums implementation do not share the same underlying implementation with non-enum types
-* Does not work for member functions
-* Does not work for static member variables
+This library takes a different approach: use the compiler itself to generate all reflection metadata at compile time. The result is a reflection system that:
 
-## Principles
+- Adds **no overhead** to object size or construction
+- Preserves **aggregate type properties** (`std::is_aggregate`, trivial construction, etc.)
+- Requires only a single macro inside the class definition
+- Composes naturally with C++20 concepts, `std::format`, and template metaprogramming
 
-### Descriptor
+The design is inspired by [C++26 `std::meta`](https://wg21.link/P2996) and [`BOOST_DESCRIBE_STRUCT`](https://www.boost.org/doc/libs/release/libs/describe/doc/html/describe.html), with a focus on being self-contained and zero-dependency.
 
-A descriptor can be seen as a struct that captures all information required at zero-abstraction cost.  
-This means everything must be using `static constexpr` variables and `using` type alias keywords. For example, `std::string str` for type `foo`:
+### Limitations
 
-```c++
-struct some_unique_descriptor
-{
-    using class_type = foo;
-    using member_type = std::basic_string<char>;
-    using member_pointer_type = std::basic_string<char> foo::*;
+- **Public member variables only.** Member functions and static members are not reflected.
+- **Manual opt-in.** Each type must be annotated with a macro. There is no automatic or non-intrusive reflection.
+- **Maximum 128 members per class.** The preprocessor loop is unrolled up to 128 entries.
+- **Enums use a separate macro** (`ENUM_PRINTABLE`) and a different underlying mechanism from structs.
+- **Compile times increase** proportionally with the number of reflected types, as the compiler must instantiate templates for all descriptors.
 
-    static constexpr std::string_view name = "str";
-    static constexpr std::string_view member_type_name = "std::basic_string<char>";
-    static constexpr member_pointer_type member_pointer = &foo::str;
-};
-```
+---
 
-### Descriptors Container
+## Examples
 
-Depending on implementation, the container to hold all of the descriptors may vary. If the descriptor is based off templates, this means each instantiation is a different type. Hence one possible container to hold them is `std::tuple`.  
-  
-But this version also implements a meta id mapping. Means each descriptor maps to an ID which has the same type throughout. Which will be possible to store them into an `std::array`
+> Try it live on Compiler Explorer (GCC 14, `-std=c++23`): [https://godbolt.org/z/dWesraofP](https://godbolt.org/z/dWesraofP)
 
-### Traversing the Descriptors Container
+### `REFLECT` — bare-metal reflection
 
-With the container implemented, we can traverse the container to obtain each descriptor and use it for the application logic.  
-  
-Unfortunately there is no way to traverse the container using the regular for-loop or ranged based for-loop, hence there will be a need to implement a visitor on the container, similar to `std::for_each`. For instance:
+Use `REFLECT` when you only need to iterate or access member variables programmatically, without printing support.
 
-```c++
-reflect::for_each<foo>([] <typename Descriptor>() {
-    // do something with the Descriptor template parameter
-});
-```
+```cpp
+#include "reflect/reflect.hpp"
 
-## Benefits of Compile Time Reflection
-
-Using compile time reflection helps to reduce runtime costs. The trade-off to this approach is that the compilation time may increase due to the amount of compile time code that needs to be generated.  
-  
-This can also be further taken advantaged of by implementing your own serialization of a config type to C++ type. _(see `test_with_yaml.cpp` for simple integration with yaml-cpp for YAML -> C++)_  
-  
-Note that, adding reflection to any user defined type will **not**:
-
-* Change the behavior of the type _(e.g. aggregated type will remain as aggregated type)_
-* Change the size of the type
-
-And it allows for encapsulation:
-
-* All reflection logic are contained within the type itself _(with the exception of enums)_
-* Similar to `virtual`, you only activate `reflection` when you need it. It is disabled by default.
-
-# Examples
-
-There are two version of reflection in this library. `REFLECT` and `REFLECT_PRINTABLE`.
-
-## REFLECT
-
-`REFLECT` provides the bare metal of reflection. When used, the type gains the ability to use the following functions:
-
-* `reflect::generate_meta_info<T>`
-* `reflect::get_member_variable<Descriptor>(T&&)`
-* `reflect::for_each<T>(...)`
-
-The first one returns you an array of meta ids. Each meta id maps to a descriptor.  
-However, it is by design that the meta id is not useable without any helper functions.  
-  
-Minimal example:
-
-```c++
 struct position_info
 {
     double bod_position;
@@ -101,44 +51,50 @@ struct position_info
 
     REFLECT(position_info, (), (bod_position, position, buy_quantity, sell_quantity));
 };
-
-int main(void)
-{
-    constexpr position_info pos{.bod_position = 1.0, .position = 3.0, .buy_quantity = 4.0, .sell_quantity = 2.0};
-
-    // Using only template parameters
-    reflect::for_each<position_info>([&pos] <typename Descriptor> () {
-        // access each member variable explicitly
-        std::cout << std::format("position_info for member {} has value of '{}'", Descriptor::name, reflect::get_member_variable<Descriptor>(pos)) << '\n';
-    });
-
-    // OR using both template parameter and normal parameters
-    reflect::for_each<position_info>([&pos] <typename Descriptor> (Descriptor desc) {
-        // access each member variable explicitly
-        std::cout << std::format("position_info for member {} has value of '{}'", Descriptor::name, reflect::get_member_variable(pos, desc)) << '\n';
-    });
-
-    // OR using only normal parameters
-    reflect::for_each<position_info>([&pos] (auto desc) {
-        // access each member variable explicitly
-        std::cout << std::format("position_info for member {} has value of '{}'", desc.name, reflect::get_member_variable(pos, desc)) << '\n';
-    });
-}
 ```
 
-## REFLECT and PRINTABLE
+The second argument `()` means no base classes. The third argument is the member list.
 
-`REFLECT_PRINTABLE` is an extension of `REFLECT`, but provides the printable version. Printable version consists of:
+Once reflected, three APIs become available:
 
-* `to_string` function which converts the class and reflected member variables into a string format. Note that this is contained in the type
-* `std::ostream::operator<<` overload with the type
-* `std::formatter` template specialization
+```cpp
+constexpr position_info pos{.bod_position = 1.0, .position = 3.0,
+                             .buy_quantity = 4.0, .sell_quantity = 2.0};
 
-_It is possible to add on to `REFLECT_PRINTABLE`, depending on the use case_
+// 1. Template-only — Descriptor available as a compile-time type parameter
+reflect::for_each<position_info>([&pos] <typename Descriptor>() {
+    std::cout << Descriptor::name << ": "
+              << reflect::get_member_variable<Descriptor>(pos) << "\n";
+});
 
-Minimal Example:
+// 2. Template + instance — when you also need a descriptor object at runtime
+reflect::for_each<position_info>([&pos] <typename Descriptor>(Descriptor desc) {
+    std::cout << desc.name << ": "
+              << reflect::get_member_variable(pos, desc) << "\n";
+});
 
-```c++
+// 3. Runtime only — when only the instance is needed
+reflect::for_each<position_info>([&pos](auto desc) {
+    std::cout << desc.name << ": "
+              << reflect::get_member_variable(pos, desc) << "\n";
+});
+```
+
+> **Note:** `REFLECT` does **not** change the object's layout, size, or aggregate properties.
+> `static_assert(sizeof(position_info_with_reflect) == sizeof(position_info_without_reflect))` holds.
+
+---
+
+### `REFLECT_PRINTABLE` — reflection with printing
+
+`REFLECT_PRINTABLE` is a superset of `REFLECT`. In addition to all reflection APIs, it generates:
+
+- `to_string(obj)` — returns a formatted `std::string`
+- `operator<<` overload for `std::ostream`
+- `std::formatter<T>` specialisation for use with `std::format`
+- `print_meta(obj)` — prints each member's type name, variable name, and current value
+
+```cpp
 struct position_info
 {
     double bod_position;
@@ -149,23 +105,34 @@ struct position_info
     REFLECT_PRINTABLE(position_info, (), (bod_position, position, buy_quantity, sell_quantity));
 };
 
-int main(void)
+int main()
 {
-    constexpr position_info pos{.bod_position = 1.0, .position = 3.0, .buy_quantity = 4.0, .sell_quantity = 2.0};
+    constexpr position_info pos{.bod_position = 1.0, .position = 3.0,
+                                .buy_quantity = 4.0, .sell_quantity = 2.0};
 
-    std::cout << to_string(pos) << '\n'; // should not be used
-    // OR
-    std::cout << pos << '\n';
-    // OR
+    std::cout << pos << "\n";
+    // {position_info: {'bod_position': 1.000, 'position': 3.000, 'buy_quantity': 4.000, 'sell_quantity': 2.000} }
+
     std::cout << std::format("{}\n", pos);
+    // same output via std::format
+
+    std::cout << print_meta(pos) << "\n";
+    // struct position_info reflected variables:
+    //   double bod_position = 1.000
+    //   double position = 3.000
+    //   ...
 }
 ```
 
-## Reflecting Inherited Classes
+---
 
-Both `REFLECT` and `REFLECT_PRINTABLE` accept a `Bases` tuple as their second argument. When a class inherits from one or more reflected base classes, passing them in the `Bases` tuple causes the derived class to include all base class members in its own reflection. The base classes must themselves be reflected before the derived class.
+### Reflecting Inherited Classes
 
-```c++
+Both `REFLECT` and `REFLECT_PRINTABLE` accept a **base-class tuple** as their second argument. When provided, the derived class's reflection automatically includes all base class members, in order from outermost base to the derived class's own members.
+
+> Base classes must be reflected **before** the derived class.
+
+```cpp
 struct base
 {
     std::string str;
@@ -189,12 +156,10 @@ struct derived_more : base, base_2
 };
 ```
 
-When no base classes are involved, pass an empty tuple `()` as usual.
+`reflect::for_each<derived_more>` iterates: `str`, `d` (from `base`), `c` (from `base_2`), then `x`.
 
-`reflect::for_each<derived_more>` will iterate over all reflected members — those inherited from `base` and `base_2`, followed by `derived_more`'s own member `x`.
-
-```c++
-int main(void)
+```cpp
+int main()
 {
     derived_more dm{};
     dm.str = "Hello World";
@@ -202,62 +167,133 @@ int main(void)
     dm.c   = 'A';
     dm.x   = 100;
 
-    std::cout << dm << '\n';
+    std::cout << dm << "\n";
     // {derived_more: {{base: {'str': Hello World, 'd': 3.140}}, {base_2: {'c': A}}, 'x': 100} }
 
-    std::cout << print_meta(dm) << '\n';
+    std::cout << print_meta(dm) << "\n";
+    // struct derived_more reflected variables:
+    //   std::string str = Hello World
+    //   double d = 3.140
+    //   char c = A
+    //   int x = 100
 }
 ```
 
-> **Note:** Only public member variables of the base classes are included, consistent with the library's public-only reflection model. Base classes must be reflected with `REFLECT` or `REFLECT_PRINTABLE` prior to their use in a derived class's `Bases` tuple.
+When no base classes are involved, pass an empty tuple `()` as the second argument.
 
-# Docker
+---
 
-### Building the Docker Image
+## Built-in Extensions
+
+### YAML Integration (`include/yaml/`)
+
+The YAML integration bridges compile-time reflection with [yaml-cpp](https://github.com/jbeder/yaml-cpp). By including `yaml/convert.hpp`, any reflected type automatically gains `YAML::convert<T>` encode and decode support — no manual mapping code needed.
+
+```cpp
+#include "yaml/convert.hpp"
+
+struct server_config
+{
+    std::string host;
+    int port;
+    std::optional<int> timeout_ms;
+    std::vector<std::string> allowed_origins;
+
+    REFLECT(server_config, (), (host, port, timeout_ms, allowed_origins));
+};
+
+// Decode from YAML
+YAML::Node node = YAML::Load(yaml_string);
+server_config cfg = node.as<server_config>();
+
+// Encode to YAML
+YAML::Node out = YAML::convert<server_config>::encode(cfg);
+```
+
+YAML keys are derived directly from C++ member variable names.
+
+#### Supported member types
+
+| Type | Encode | Decode |
+|---|---|---|
+| Scalars (`int`, `double`, `bool`, `std::string`, etc.) | Always | Always (throws if key missing) |
+| `std::optional<T>` | Skipped if `nullopt` | Skipped if key absent |
+| Containers (`std::vector<T>`, etc.) | Skipped if empty | Skipped if key absent |
+| Nested reflected types | Recursively encoded | Recursively decoded |
+
+#### Limitations
+
+- YAML key names must match C++ member names exactly. Renaming a field is a breaking schema change.
+- No key validation on decode — missing required (non-optional) keys cause yaml-cpp to throw at runtime.
+- `std::string` and `std::string_view` are treated as scalars, not containers, even though they satisfy range concepts.
+
+---
+
+### Argument Parsing (`include/argparse/`)
+
+The argument parser is inspired by Python's `argparse` module — but driven entirely by compile-time reflection rather than runtime registration. Declare a config struct, reflect it, and pass `argc`/`argv` directly.
+
+```cpp
+#include "argparse/argparse.hpp"
+
+struct program_args
+{
+    std::string config_path;
+    int worker_count;
+    bool verbose;
+    std::optional<int> timeout_ms;     // not required on the command line
+    std::vector<std::string> plugins;  // not required; defaults to empty
+
+    REFLECT(program_args, (), (config_path, worker_count, verbose, timeout_ms, plugins));
+};
+
+int main(int argc, const char* argv[])
+{
+    // ./app --config_path ./cfg.yaml --worker_count 4 --verbose true --plugins a,b,c
+    auto args = argparse::parse_args<program_args>(argc, argv);
+}
+```
+
+#### Argument syntax rules
+
+| Rule | Detail |
+|---|---|
+| Prefix | `--name value` only. No short form (`-n`). |
+| Separator | Whitespace between key and value. |
+| Lists | Comma-separated: `--plugins a,b,c` → `std::vector{"a", "b", "c"}` |
+| Booleans | `"true"` or `"false"` (case-insensitive) |
+| Enums | String name of the enumerator (requires `ENUM_PRINTABLE` on the enum type) |
+
+#### Required vs optional arguments
+
+| Member type | Required on CLI? |
+|---|---|
+| Any scalar type | Yes — throws if not provided |
+| `std::optional<T>` | No — skipped if absent |
+| `std::vector<T>` | No — defaults to empty |
+
+#### Limitations
+
+- No short-form flags (`-v` as alias for `--verbose`).
+- No boolean presence flags — booleans require an explicit value (`--verbose true`).
+- No sub-commands or nested argument groups.
+- No `--help` generation.
+
+---
+
+## Building
+
+Dependencies are managed via [Conan](https://conan.io/):
 
 ```bash
-# Build the Docker image
+./conan_build.sh   # installs deps, builds with CMake, runs test suite
+```
+
+Or using Docker:
+
+```bash
 docker build -t reflection-library .
-
-# Or build with a specific tag
-docker build -t reflection-library:latest .
-```
-
-### Running Tests in Docker
-
-```bash
-# Run the build and tests in a container
 docker run --rm reflection-library
-
-# Run with interactive mode for debugging
-docker run -it --rm reflection-library /bin/bash
-
-# Run specific tests after entering the container
-./conan_build.sh
 ```
 
-### Development with Docker
-
-```bash
-# Mount local source code and run interactively
-docker run -it --rm -v $(pwd):/app reflection-library /bin/bash
-
-# Inside the container, you can:
-cd /app
-./conan_build.sh  # Build and run tests
-```
-
-### Docker Compose (if available)
-
-If a `docker-compose.yml` file exists:
-
-```bash
-# Build and run all services
-docker-compose up --build
-
-# Run only the reflection service
-docker-compose up reflection-service
-
-# Run tests
-docker-compose run reflection-service ./conan_build.sh
-```
+**Requirements:** C++23 compiler (GCC ≥ 13, Clang ≥ 16, MSVC ≥ 19.34), CMake ≥ 4.1.0.
