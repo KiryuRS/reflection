@@ -1,6 +1,7 @@
 #pragma once
 
 #include "concepts.hpp"
+#include "typelist.hpp"
 #include "utility.hpp"
 #include "preprocessor.hpp"
 
@@ -11,6 +12,30 @@
 namespace reflect {
 
 namespace detail {
+
+template <typename>
+struct introspection;
+
+template <typename Class, typename Member>
+struct introspection<Member Class::*>
+{
+    using member_type = Member;
+    using member_pointer_type = Member (Class::*);
+
+    static constexpr std::string_view mem_type_str = ::reflect::utility::get_name<member_type>();
+};
+
+template <typename Class, typename ReturnType, typename ... Args>
+struct introspection<ReturnType (Class::*)(Args...)>
+{
+    using member_type = ReturnType(Args...);
+    using member_pointer_type = ReturnType (Class::*)(Args...);
+    using return_type = ReturnType;
+    using arguments_type = typelist<Args...>;
+
+    // dont extend this for introspection. lazy way of differentiating from member variable
+    static constexpr std::string_view mem_type_str = "class member function";
+};
 
 template <auto>
 struct meta_id
@@ -96,12 +121,13 @@ constexpr void for_each(Functor&& func)
 #define GENERATE_DESCRIPTOR(Class, Member)                                                              \
     struct PP_CREATE_CLASS_NAME(descriptor, Class, Member)                                              \
     {                                                                                                   \
+        using introspection_type = ::reflect::detail::introspection<decltype(&Class::Member)>;          \
         using class_type = struct Class;                                                                \
-        using member_type = decltype(Class::Member);                                                    \
-        using member_pointer_type = member_type Class::*;                                               \
+        using member_type = typename introspection_type::member_type;                                   \
+        using member_pointer_type = typename introspection_type::member_pointer_type;                   \
                                                                                                         \
         static constexpr std::string_view name = PP_STRINGIZE(Member);                                  \
-        static constexpr std::string_view mem_type_str = ::reflect::utility::get_name<member_type>();   \
+        static constexpr std::string_view mem_type_str = introspection_type::mem_type_str;              \
         static constexpr member_pointer_type mem_ptr = &Class::Member;                                  \
     };
 
