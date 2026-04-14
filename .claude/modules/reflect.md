@@ -68,6 +68,8 @@ Member functions are distinguished at compile time via `std::is_function_v<typen
 - **Member variable** — returns `obj.*mem_ptr` (the value)
 - **Member function** — returns `std::bind_front(mem_ptr, std::forward<T>(obj))`, a `constexpr`-compatible callable bound to the object
 
+**Restriction:** member functions can only be reflected with `REFLECT`, not `REFLECT_PRINTABLE`. `to_string` uses `OSTREAM_PRINT` which directly streams `object.member` by name, and `print_meta` streams the result of `get_member_variable` — both are ill-formed for function types.
+
 ---
 
 ## Technique 3 — `meta_id` / injected friend (`reflect.hpp:15–50`)

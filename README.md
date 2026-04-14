@@ -222,6 +222,8 @@ reflect::for_each<entity>([&obj] <typename Descriptor>() {
 
 `get_member_variable` dispatches on `std::is_function_v<typename Descriptor::member_type>`: member variables return their value, member functions return a `constexpr`-compatible `std::bind_front` callable bound to the object.
 
+> **Restriction:** member functions can only be reflected with `REFLECT`, not `REFLECT_PRINTABLE`. The printing macros (`to_string`, `print_meta`, `operator<<`) attempt to stream every member directly, which is ill-formed for function types.
+
 ---
 
 ## Built-in Extensions
