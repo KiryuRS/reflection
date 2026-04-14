@@ -222,11 +222,19 @@ TEST(test_reflection, test_derived)
 
 TEST(test_reflection, test_with_functions)
 {
+    mocks::with_functions obj{.x = 42};
+
     bool has_member_function = false;
-    ::reflect::for_each<mocks::with_functions>([&has_member_function] <typename Descriptor> () mutable {
-        if constexpr (Descriptor::mem_type_str == "class member function")
+    ::reflect::for_each<mocks::with_functions>([&] <typename Descriptor>() mutable {
+        if constexpr (std::is_function_v<typename Descriptor::member_type>)
         {
             has_member_function = true;
+            auto fn = ::reflect::get_member_variable<Descriptor>(obj);
+            static_assert(std::is_invocable_v<decltype(fn), int, double, const mocks::derived_more&>);
+        }
+        else
+        {
+            EXPECT_EQ(::reflect::get_member_variable<Descriptor>(obj), 42);
         }
     });
 

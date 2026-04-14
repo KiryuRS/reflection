@@ -62,7 +62,11 @@ struct descriptor_Class_Member {
 
 Everything is `static constexpr` — zero runtime storage. `mem_ptr` is a pointer-to-member constant used by `get_member_variable` as `obj.*Descriptor::mem_ptr`.
 
-Member functions are distinguished at compile time via `Descriptor::mem_type_str == "class member function"` or by checking whether `Descriptor::introspection_type::return_type` / `::arguments_type` are well-formed. Note: `get_member_variable` only works for member variable descriptors.
+Member functions are distinguished at compile time via `std::is_function_v<typename Descriptor::member_type>` (function descriptors have `member_type = ReturnType(Args...)`, a function type).
+
+`get_member_variable` handles both cases via `if constexpr`:
+- **Member variable** — returns `obj.*mem_ptr` (the value)
+- **Member function** — returns `std::bind_front(mem_ptr, std::forward<T>(obj))`, a `constexpr`-compatible callable bound to the object
 
 ---
 

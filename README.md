@@ -185,7 +185,7 @@ When no base classes are involved, pass an empty tuple `()` as the second argume
 
 ### Reflecting Member Functions
 
-Member functions can be included in the member list alongside member variables. Their descriptors expose `return_type` and `arguments_type` (a `typelist<Args...>`) through `introspection_type`, and always have `mem_type_str == "class member function"`.
+Member functions can be included in the member list alongside member variables. Their descriptors expose `return_type` and `arguments_type` (a `typelist<Args...>`) through `introspection_type`.
 
 ```cpp
 #include "reflect/reflect.hpp"
@@ -198,22 +198,29 @@ struct entity
     REFLECT(entity, (), (id, update));
 };
 
-reflect::for_each<entity>([] <typename Descriptor>() {
-    if constexpr (Descriptor::mem_type_str == "class member function")
+entity obj{.id = 1};
+
+reflect::for_each<entity>([&obj] <typename Descriptor>() {
+    if constexpr (std::is_function_v<typename Descriptor::member_type>)
     {
-        // member function descriptor — return type and argument types are available
+        // returns std::bind_front(mem_ptr, obj) — a callable bound to obj
+        auto fn = reflect::get_member_variable<Descriptor>(obj);
+        // fn(1.0f, 42) calls obj.update(1.0f, 42)
+
+        // return type and argument types are also introspectable:
         using ret_t  = typename Descriptor::introspection_type::return_type;
         using args_t = typename Descriptor::introspection_type::arguments_type;
         // args_t = typelist<float, int>
     }
     else
     {
-        // member variable descriptor — use get_member_variable as normal
+        // returns the member variable value as normal
+        auto val = reflect::get_member_variable<Descriptor>(obj);
     }
 });
 ```
 
-`get_member_variable` only operates on member variable descriptors. Calling it on a function descriptor is a compile error.
+`get_member_variable` dispatches on `std::is_function_v<typename Descriptor::member_type>`: member variables return their value, member functions return a `constexpr`-compatible `std::bind_front` callable bound to the object.
 
 ---
 

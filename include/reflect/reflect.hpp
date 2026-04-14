@@ -5,6 +5,7 @@
 #include "utility.hpp"
 #include "preprocessor.hpp"
 
+#include <functional>
 #include <iomanip>
 #include <sstream>
 #include <utility>
@@ -33,7 +34,7 @@ struct introspection<ReturnType (Class::*)(Args...)>
     using return_type = ReturnType;
     using arguments_type = typelist<Args...>;
 
-    // dont extend this for introspection. lazy way of differentiating from member variable
+    // TODO: utility to support get_name for member functions?
     static constexpr std::string_view mem_type_str = "class member function";
 };
 
@@ -77,13 +78,27 @@ consteval auto generate_meta_info()
 template <concepts::descriptor_like Descriptor, concepts::reflectable T>
 constexpr decltype(auto) get_member_variable(T&& obj)
 {
-    return std::forward<T>(obj).*Descriptor::mem_ptr;
+    if constexpr (std::is_function_v<typename Descriptor::member_type>)
+    {
+        return std::bind_front(Descriptor::mem_ptr, std::forward<T>(obj));
+    }
+    else
+    {
+        return std::forward<T>(obj).*Descriptor::mem_ptr;
+    }
 }
 
 template <concepts::descriptor_like Descriptor, concepts::reflectable T>
 constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor)
 {
-    return std::forward<T>(obj).*(descriptor.mem_ptr);
+    if constexpr (std::is_function_v<typename Descriptor::member_type>)
+    {
+        return std::bind_front(descriptor.mem_ptr, std::forward<T>(obj));
+    }
+    else
+    {
+        return std::forward<T>(obj).*(descriptor.mem_ptr);
+    }
 }
 
 template <concepts::reflectable T, typename Functor>
