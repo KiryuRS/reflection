@@ -23,10 +23,10 @@ The design is inspired by [C++26 `std::meta`](https://wg21.link/P2996) and [`BOO
 
 ### Limitations
 
-- **Public member variables only.** Member functions and static members are not reflected.
 - **Manual opt-in.** Each type must be annotated with a macro. There is no automatic or non-intrusive reflection.
 - **Maximum 128 members per class.** The preprocessor loop is unrolled up to 128 entries.
 - **Enums use a separate macro** (`ENUM_PRINTABLE`) and a different underlying mechanism from structs.
+- **Static members cannot be reflected.**
 - **Compile times increase** proportionally with the number of reflected types, as the compiler must instantiate templates for all descriptors.
 
 ---
@@ -180,6 +180,40 @@ int main()
 ```
 
 When no base classes are involved, pass an empty tuple `()` as the second argument.
+
+---
+
+### Reflecting Member Functions
+
+Member functions can be included in the member list alongside member variables. Their descriptors expose `return_type` and `arguments_type` (a `typelist<Args...>`) through `introspection_type`, and always have `mem_type_str == "class member function"`.
+
+```cpp
+#include "reflect/reflect.hpp"
+
+struct entity
+{
+    int id;
+    void update(float dt, int flags);
+
+    REFLECT(entity, (), (id, update));
+};
+
+reflect::for_each<entity>([] <typename Descriptor>() {
+    if constexpr (Descriptor::mem_type_str == "class member function")
+    {
+        // member function descriptor — return type and argument types are available
+        using ret_t  = typename Descriptor::introspection_type::return_type;
+        using args_t = typename Descriptor::introspection_type::arguments_type;
+        // args_t = typelist<float, int>
+    }
+    else
+    {
+        // member variable descriptor — use get_member_variable as normal
+    }
+});
+```
+
+`get_member_variable` only operates on member variable descriptors. Calling it on a function descriptor is a compile error.
 
 ---
 

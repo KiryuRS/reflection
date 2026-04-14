@@ -45,6 +45,7 @@ concept any_invocable = template_only_invocable<Functor, T> || template_invocabl
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept descriptor_like = requires {
+    typename RawT::introspection_type;
     typename RawT::class_type;
     typename RawT::member_type;
     typename RawT::member_pointer_type;

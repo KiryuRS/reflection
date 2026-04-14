@@ -8,6 +8,7 @@
 | `preprocessor.hpp` | Macro utilities: `PP_FOR_EACH`, `PP_GET_NTH_ARG`, token-paste helpers |
 | `concepts.hpp` | C++20 concepts constraining descriptors, reflectable types, functors |
 | `utility.hpp` | `get_name<T>()`, `get_short_name<T>()`, `hash_dj2ba()`, `concat_arrays()` |
+| `typelist.hpp` | `typelist<Ts...>` and associated utilities (`same_as_typelist`, `typelist_size_v`, `typelist_element_t`) |
 | `enum.hpp` | `ENUM_PRINTABLE` macro for enum ↔ string conversion |
 
 ---
@@ -20,23 +21,48 @@
 
 ---
 
-## Technique 2 — Descriptor structs (`reflect.hpp:96–106`)
+## Technique 2 — `introspection<T>` + Descriptor structs (`reflect.hpp`)
 
-`GENERATE_DESCRIPTOR(Class, Member)` emits one struct per member:
+`detail::introspection<T>` is a primary template with two specializations that decode a pointer-to-member type:
+
+```cpp
+// Member variable: Member Class::*
+template <typename Class, typename Member>
+struct introspection<Member Class::*> {
+    using member_type         = Member;
+    using member_pointer_type = Member (Class::*);
+    static constexpr std::string_view mem_type_str = get_name<member_type>();
+};
+
+// Member function: ReturnType (Class::*)(Args...)
+template <typename Class, typename ReturnType, typename... Args>
+struct introspection<ReturnType (Class::*)(Args...)> {
+    using member_type         = ReturnType(Args...);
+    using member_pointer_type = ReturnType (Class::*)(Args...);
+    using return_type         = ReturnType;
+    using arguments_type      = typelist<Args...>;   // from typelist.hpp
+    static constexpr std::string_view mem_type_str = "class member function";
+};
+```
+
+`GENERATE_DESCRIPTOR(Class, Member)` emits one struct per member, routing all type information through `introspection`:
 
 ```cpp
 struct descriptor_Class_Member {
+    using introspection_type  = reflect::detail::introspection<decltype(&Class::Member)>;
     using class_type          = Class;
-    using member_type         = decltype(Class::Member);
-    using member_pointer_type = member_type Class::*;
+    using member_type         = typename introspection_type::member_type;
+    using member_pointer_type = typename introspection_type::member_pointer_type;
 
-    static constexpr std::string_view name         = "Member";             // #Member stringification
-    static constexpr std::string_view mem_type_str = get_name<member_type>();
+    static constexpr std::string_view name         = "Member";
+    static constexpr std::string_view mem_type_str = introspection_type::mem_type_str;
     static constexpr member_pointer_type mem_ptr   = &Class::Member;
 };
 ```
 
 Everything is `static constexpr` — zero runtime storage. `mem_ptr` is a pointer-to-member constant used by `get_member_variable` as `obj.*Descriptor::mem_ptr`.
+
+Member functions are distinguished at compile time via `Descriptor::mem_type_str == "class member function"` or by checking whether `Descriptor::introspection_type::return_type` / `::arguments_type` are well-formed. Note: `get_member_variable` only works for member variable descriptors.
 
 ---
 
@@ -122,11 +148,32 @@ Enums do **not** use the descriptor/meta_id mechanism — the simpler hash-switc
 
 ---
 
+## `typelist.hpp`
+
+A minimal compile-time type list:
+
+```cpp
+template <typename... Ts>
+struct typelist {};
+```
+
+Utilities:
+
+| Utility | What it does |
+|---|---|
+| `same_as_typelist<T>` concept | True if `T` is a `typelist<...>` instantiation |
+| `typelist_size_v<Typelist>` | `sizeof...(Ts)` as a `constexpr std::size_t` |
+| `typelist_element_t<I, Typelist>` | The `I`-th type in the list (recursive specialization) |
+
+Used by `introspection` to expose function argument types as `arguments_type = typelist<Args...>`.
+
+---
+
 ## Concepts (`concepts.hpp`)
 
 | Concept | What it checks |
 |---|---|
-| `descriptor_like<T>` | Has `class_type`, `member_type`, `member_pointer_type`; `name`, `mem_type_str` are `const string_view`; `mem_ptr` is the correct pointer-to-member type |
+| `descriptor_like<T>` | Has `introspection_type`, `class_type`, `member_type`, `member_pointer_type`; `name`, `mem_type_str` are `const string_view`; `mem_ptr` is the correct pointer-to-member type |
 | `reflectable<T>` | `T::meta_info_array_as_id()` returns `void(*)()` |
 | `reflect_and_printable<T>` | `reflectable` + `to_string(T)` + `print_meta(T)` are well-formed |
 | `enumerable<T>` | `std::is_enum_v<T>` and `T::NONE` exists |

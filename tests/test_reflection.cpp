@@ -115,6 +115,14 @@ struct derived_more : base, base_2
     REFLECT_PRINTABLE(derived_more, (base, base_2), (x));
 };
 
+struct with_functions
+{
+    int x;
+    void some_foo_function(int, double, const derived_more&);
+
+    REFLECT(with_functions, (), (x, some_foo_function));
+};
+
 } // namespace mocks
 
 TEST(test_enum, test_roundtrip)
@@ -210,6 +218,19 @@ TEST(test_reflection, test_derived)
 
     std::cout << std::format("{}\n", dm);
     std::cout << print_meta(dm) << '\n';
+}
+
+TEST(test_reflection, test_with_functions)
+{
+    bool has_member_function = false;
+    ::reflect::for_each<mocks::with_functions>([&has_member_function] <typename Descriptor> () mutable {
+        if constexpr (Descriptor::mem_type_str == "class member function")
+        {
+            has_member_function = true;
+        }
+    });
+
+    EXPECT_TRUE(has_member_function);
 }
 
 } // namespace tests
