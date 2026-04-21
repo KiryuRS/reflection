@@ -76,7 +76,7 @@ consteval auto generate_meta_info()
 }
 
 template <concepts::descriptor_like Descriptor, concepts::reflectable T>
-constexpr decltype(auto) get_member_variable(T&& obj)
+constexpr decltype(auto) get_member_variable(T&& obj) noexcept
 {
     if constexpr (std::is_function_v<typename Descriptor::member_type>)
     {
@@ -89,7 +89,7 @@ constexpr decltype(auto) get_member_variable(T&& obj)
 }
 
 template <concepts::descriptor_like Descriptor, concepts::reflectable T>
-constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor)
+constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor) noexcept
 {
     if constexpr (std::is_function_v<typename Descriptor::member_type>)
     {
@@ -99,6 +99,12 @@ constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor)
     {
         return std::forward<T>(obj).*(descriptor.mem_ptr);
     }
+}
+
+template <auto MetaTypeInfo>
+constexpr auto get_descriptor() noexcept
+{
+    return detail::meta_type_underlying_type<MetaTypeInfo>{};
 }
 
 template <concepts::reflectable T, typename Functor>
@@ -116,7 +122,7 @@ constexpr void for_each(Functor&& func)
     static_assert(concepts::any_invocable<Functor, detail::meta_type_underlying_type<META_ARRAY_INFO[0]>>, "Functor is not invocable!");
 
     const auto on_each_visit = [&func] <size_t I> () {
-        using descriptor_t = detail::meta_type_underlying_type<META_ARRAY_INFO[I]>;
+        using descriptor_t = decltype(get_descriptor<META_ARRAY_INFO[I]>());
 
         if constexpr (concepts::template_only_invocable<Functor, descriptor_t>)
             func.template operator()<descriptor_t>();
