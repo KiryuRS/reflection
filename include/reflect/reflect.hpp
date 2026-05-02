@@ -5,6 +5,7 @@
 #include "utility.hpp"
 #include "preprocessor.hpp"
 
+#include <algorithm>
 #include <functional>
 #include <iomanip>
 #include <sstream>
@@ -67,6 +68,39 @@ static constexpr auto meta_type_info = meta_type<T, V>::id;
 template <auto MetaTypeInfo>
 using meta_type_underlying_type = typename decltype(get_meta_info(meta_id<MetaTypeInfo>{}))::value_type;
 
+template <typename T, auto MemberPtr, std::size_t... Is>
+consteval std::size_t find_index(std::index_sequence<Is...>)
+{
+    // returns the index matching the member pointer or 0
+    constexpr auto index_or_zero = []<std::size_t I>() -> std::size_t {
+        constexpr auto array = decltype(get_meta_info(detail::meta_id<T::meta_info_array_as_id()>{}))::value;
+        using descriptor_t = reflect::detail::meta_type_underlying_type<array[I]>;
+        if constexpr (std::same_as<typename descriptor_t::member_pointer_type, decltype(MemberPtr)>)
+        {
+            return (descriptor_t::mem_ptr == MemberPtr) ? I : 0;
+        }
+        else
+        {
+            return 0;
+        }
+    };
+    constexpr std::array matches_index{index_or_zero.template operator()<Is>()...};
+    constexpr std::size_t result = std::ranges::fold_left(matches_index, 0, std::plus<std::size_t>());
+    static_assert(result < sizeof...(Is), "Member Pointer is not part of T!");
+    return result;
+}
+
+template <typename T, auto MemberPtr>
+struct descriptor_for_t
+{
+    static constexpr auto descriptor_array = decltype(get_meta_info(detail::meta_id<T::meta_info_array_as_id()>{}))::value;
+    static constexpr std::size_t index = find_index<T, MemberPtr>(std::make_index_sequence<descriptor_array.size()>{});
+    using type = reflect::detail::meta_type_underlying_type<descriptor_array[index]>;
+};
+
+template <typename T, auto MemberPtr>
+using descriptor_for = typename descriptor_for_t<T, MemberPtr>::type;
+
 } // namespace detail
 
 template <concepts::reflectable T>
@@ -106,6 +140,10 @@ constexpr auto get_descriptor() noexcept
 {
     return detail::meta_type_underlying_type<MetaTypeInfo>{};
 }
+
+template <concepts::reflectable T, auto MemberPtr>
+    requires concepts::member_of<T, MemberPtr>
+using descriptor_for = detail::descriptor_for<T, MemberPtr>;
 
 template <concepts::reflectable T, typename Functor>
 constexpr void for_each(Functor&& func)

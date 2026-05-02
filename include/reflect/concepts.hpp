@@ -20,10 +20,22 @@ struct is_array_type<std::array<T, N>> : std::true_type
 {
 };
 
+template <typename>
+struct member_class;
+
+template <typename Class, typename T>
+struct member_class<T Class::*>
+{
+    using type = Class;
+};
+
 } // namespace detail
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept same_as_array_type = detail::is_array_type<RawT>::value;
+
+template <typename T, auto MemberPtr>
+concept member_of = std::same_as<T, typename detail::member_class<decltype(MemberPtr)>::type>;
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept stringable = std::same_as<RawT, std::string_view> || std::same_as<std::string, RawT> || std::same_as<const char*, RawT>;
