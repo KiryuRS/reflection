@@ -241,4 +241,66 @@ TEST(test_reflection, test_with_functions)
     EXPECT_TRUE(has_member_function);
 }
 
+TEST(test_reflection, test_descriptor_for)
+{
+    // descriptor_for<T, &T::member> resolves to the generated descriptor type for that member
+
+    // basic member variable lookup
+    using desc_l = reflect::descriptor_for<mocks::foo, &mocks::foo::l>;
+    using desc_i = reflect::descriptor_for<mocks::foo, &mocks::foo::i>;
+    using desc_s = reflect::descriptor_for<mocks::foo, &mocks::foo::s>;
+    using desc_c = reflect::descriptor_for<mocks::foo, &mocks::foo::c>;
+
+    static_assert(desc_l::name == "l");
+    static_assert(desc_i::name == "i");
+    static_assert(desc_s::name == "s");
+    static_assert(desc_c::name == "c");
+
+    // class_type must be the owning struct
+    static_assert(std::same_as<desc_l::class_type, mocks::foo>);
+    static_assert(std::same_as<desc_i::class_type, mocks::foo>);
+
+    // member_type must match the actual C++ type of the field
+    static_assert(std::same_as<desc_l::member_type, long>);
+    static_assert(std::same_as<desc_i::member_type, int>);
+    static_assert(std::same_as<desc_s::member_type, short>);
+    static_assert(std::same_as<desc_c::member_type, char>);
+
+    // member_pointer_type must match decltype of the pointer
+    static_assert(std::same_as<desc_l::member_pointer_type, decltype(&mocks::foo::l)>);
+    static_assert(std::same_as<desc_i::member_pointer_type, decltype(&mocks::foo::i)>);
+
+    // lookup works across different reflectable structs
+    using desc_price = reflect::descriptor_for<mocks::bar, &mocks::bar::price>;
+    static_assert(desc_price::name == "price");
+    static_assert(std::same_as<desc_price::class_type, mocks::bar>);
+    static_assert(std::same_as<desc_price::member_type, double>);
+
+    using desc_tag = reflect::descriptor_for<mocks::bar, &mocks::bar::tag>;
+    static_assert(desc_tag::name == "tag");
+    static_assert(std::same_as<desc_tag::member_type, mocks::another_enum>);
+
+    // lookup works for own members of a derived struct
+    using desc_x = reflect::descriptor_for<mocks::derived_more, &mocks::derived_more::x>;
+    static_assert(desc_x::name == "x");
+    static_assert(std::same_as<desc_x::class_type, mocks::derived_more>);
+    static_assert(std::same_as<desc_x::member_type, int>);
+
+    // lookup works for member functions
+    using desc_fn = reflect::descriptor_for<mocks::with_functions, &mocks::with_functions::some_foo_function>;
+    static_assert(desc_fn::name == "some_foo_function");
+    static_assert(std::same_as<desc_fn::class_type, mocks::with_functions>);
+    static_assert(std::is_function_v<desc_fn::member_type>);
+
+    // the resolved descriptor satisfies the descriptor_like concept
+    static_assert(reflect::concepts::descriptor_like<desc_l>);
+    static_assert(reflect::concepts::descriptor_like<desc_price>);
+    static_assert(reflect::concepts::descriptor_like<desc_fn>);
+
+    // mem_ptr round-trips back to the original pointer
+    static_assert(desc_l::mem_ptr == &mocks::foo::l);
+    static_assert(desc_price::mem_ptr == &mocks::bar::price);
+    static_assert(desc_x::mem_ptr == &mocks::derived_more::x);
+}
+
 } // namespace tests
