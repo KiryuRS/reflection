@@ -71,23 +71,26 @@ using meta_type_underlying_type = typename decltype(get_meta_info(meta_id<MetaTy
 template <typename T, auto MemberPtr, std::size_t... Is>
 consteval std::size_t find_index(std::index_sequence<Is...>)
 {
-    // returns the index matching the member pointer or 0
+    // returns the index matching the member pointer or sentinel
+    static constexpr auto sentinel = sizeof...(Is);
+
     constexpr auto index_or_zero = []<std::size_t I>() -> std::size_t {
         constexpr auto array = decltype(get_meta_info(detail::meta_id<T::meta_info_array_as_id()>{}))::value;
         using descriptor_t = reflect::detail::meta_type_underlying_type<array[I]>;
         if constexpr (std::same_as<typename descriptor_t::member_pointer_type, decltype(MemberPtr)>)
         {
-            return (descriptor_t::mem_ptr == MemberPtr) ? I : 0;
+            return (descriptor_t::mem_ptr == MemberPtr) ? I : sentinel;
         }
         else
         {
-            return 0;
+            return sentinel;
         }
     };
-    constexpr std::array matches_index{index_or_zero.template operator()<Is>()...};
-    constexpr std::size_t result = std::ranges::fold_left(matches_index, 0, std::plus<std::size_t>());
-    static_assert(result < sizeof...(Is), "Member Pointer is not part of T!");
-    return result;
+
+    static constexpr std::array matches_index{index_or_zero.template operator()<Is>()...};
+    constexpr auto iter = std::ranges::find_if(matches_index, [] (std::size_t index) { return index != sentinel; });
+    static_assert(iter != std::ranges::end(matches_index), "Member Pointer is not part of T!");
+    return *iter;
 }
 
 template <typename T, auto MemberPtr>
@@ -103,6 +106,7 @@ using descriptor_for = typename descriptor_for_t<T, MemberPtr>::type;
 
 } // namespace detail
 
+/* ==================================== START OF HELPER FUNCTIONS ==================================== */
 template <concepts::reflectable T>
 consteval auto generate_meta_info()
 {
@@ -114,7 +118,17 @@ constexpr decltype(auto) get_member_variable(T&& obj) noexcept
 {
     if constexpr (std::is_function_v<typename Descriptor::member_type>)
     {
-        return std::bind_front(Descriptor::mem_ptr, std::forward<T>(obj));
+
+        if constexpr (std::is_lvalue_reference_v<T&&>)
+        {
+            // TODO: C++26 - use `std::bind_front<Descriptor::mem_ptr>(std::ref(obj))`
+            return std::bind_front(Descriptor::mem_ptr, std::ref(obj));
+        }
+        else
+        {
+            // TODO: C++26 - use `std::bind_front<Descriptor::mem_ptr>(std::forward<T>(obj))`
+            return std::bind_front(Descriptor::mem_ptr, std::forward<T>(obj));
+        }
     }
     else
     {
@@ -123,16 +137,9 @@ constexpr decltype(auto) get_member_variable(T&& obj) noexcept
 }
 
 template <concepts::descriptor_like Descriptor, concepts::reflectable T>
-constexpr decltype(auto) get_member_variable(T&& obj, Descriptor descriptor) noexcept
+constexpr decltype(auto) get_member_variable(T&& obj, Descriptor) noexcept
 {
-    if constexpr (std::is_function_v<typename Descriptor::member_type>)
-    {
-        return std::bind_front(descriptor.mem_ptr, std::forward<T>(obj));
-    }
-    else
-    {
-        return std::forward<T>(obj).*(descriptor.mem_ptr);
-    }
+    return get_member_variable<Descriptor>(std::forward<T>(obj));
 }
 
 template <auto MetaTypeInfo>
@@ -145,8 +152,8 @@ template <concepts::reflectable T, auto MemberPtr>
     requires concepts::member_of<T, MemberPtr>
 using descriptor_for = detail::descriptor_for<T, MemberPtr>;
 
-template <concepts::reflectable T, typename Functor>
-constexpr void for_each(Functor&& func)
+template <concepts::reflectable T, typename Functor, std::size_t ... Is>
+constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
 {
     // unfortunately the existing range-based for loop (pre C++26) does not have constexpr support,
     // so we use the traditional lambda + variadic to loop through all of the meta types.
@@ -156,11 +163,12 @@ constexpr void for_each(Functor&& func)
     //     constexpr auto descriptor = get_descriptor<meta>();
     //     ... // do something with the descriptor
     // }
-    static constexpr auto META_ARRAY_INFO = generate_meta_info<T>();
-    static_assert(concepts::any_invocable<Functor, detail::meta_type_underlying_type<META_ARRAY_INFO[0]>>, "Functor is not invocable!");
+    static constexpr auto descriptor_array = generate_meta_info<T>();
+    static_assert(concepts::any_invocable<Functor, detail::meta_type_underlying_type<descriptor_array[0]>>, "Functor is not invocable!");
+    static constexpr auto meta_size = descriptor_array.size();
 
     const auto on_each_visit = [&func] <size_t I> () {
-        using descriptor_t = decltype(get_descriptor<META_ARRAY_INFO[I]>());
+        using descriptor_t = decltype(get_descriptor<descriptor_array[I]>());
 
         if constexpr (concepts::template_only_invocable<Functor, descriptor_t>)
             func.template operator()<descriptor_t>();
@@ -170,13 +178,17 @@ constexpr void for_each(Functor&& func)
             func(descriptor_t{});
     };
 
-    const auto visitor = [&on_each_visit] <size_t ... Is> (std::index_sequence<Is...>) {
+    if constexpr (sizeof...(Is) != meta_size)
+    {
+        for_each<T>(std::forward<Functor>(func), std::make_index_sequence<meta_size>{});
+    }
+    else
+    {
         (on_each_visit.template operator()<Is>(), ...);
-    };
-
-    visitor(std::make_index_sequence<META_ARRAY_INFO.size()>{});
+    }
 }
 
+/* ===================================== END OF HELPER FUNCTIONS ===================================== */
 #define GENERATE_DESCRIPTOR(Class, Member)                                                              \
     struct PP_CREATE_CLASS_NAME(descriptor, Class, Member)                                              \
     {                                                                                                   \

@@ -23,7 +23,9 @@ include/
   yaml/         # yaml-cpp integration
   argparse/     # CLI argument parser
 tests/
-  test_reflection.cpp
+  reflection_mocks.hpp          # shared mock types for both reflection test files
+  test_reflection_core.cpp      # struct traits, for_each, printable
+  test_reflection_extended.cpp  # function descriptors, descriptor_for, inheritance
   test_yaml_conversion.cpp
   test_argparse.cpp
 .claude/
@@ -51,6 +53,31 @@ reflect::for_each<Foo>([&foo] <typename D>() {
 
 std::cout << foo;        // operator<< via REFLECT_PRINTABLE
 std::format("{}", foo);  // std::formatter specialization
+```
+
+Reverse-lookup a descriptor from a member pointer — works for variables and functions:
+```cpp
+using D = reflect::descriptor_for<Foo, &Foo::x>;
+// D::name, D::member_type, D::mem_ptr all resolve at compile time
+static_assert(D::mem_ptr == &Foo::x);
+```
+
+Reflecting member functions — use `REFLECT` (not `REFLECT_PRINTABLE`):
+```cpp
+struct Bar {
+    int value;
+    int compute(int factor) { return value * factor; }
+    REFLECT(Bar, (), (value, compute));
+};
+
+reflect::for_each<Bar>([&bar] <typename D>() {
+    if constexpr (std::is_function_v<typename D::member_type>) {
+        // D::introspection_type::return_type    -- return type
+        // D::introspection_type::arguments_type -- typelist<Args...>
+        auto fn = reflect::get_member_variable<D>(bar); // callable bound to bar by ref
+        fn(2); // calls bar.compute(2), mutations land on bar
+    }
+});
 ```
 
 Inheritance — pass base classes in the second argument:

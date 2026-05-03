@@ -4,7 +4,7 @@
 
 - **Zero runtime cost.** All metadata must live in `static constexpr` / `consteval`. Never introduce runtime tables, virtual dispatch, or heap allocation into the core reflection engine.
 - **Non-intrusive on object layout.** The macros add only static member functions. They must not change `sizeof(T)` or break aggregate initialization.
-- **Public members only.** The library intentionally reflects only public member variables. Not functions, not statics. This is a deliberate design boundary.
+- **Public members only.** The library reflects public member variables and public non-static member functions. Static members are not reflected. Private/protected members are not accessible to the macro.
 - **Enums are separate.** Enum reflection uses `ENUM_PRINTABLE` and a hash-switch mechanism entirely distinct from the struct descriptor/meta_id system. Do not conflate them.
 - **128-member hard limit.** `PP_FOR_EACH` is unrolled to 128 entries in `preprocessor.hpp`. Exceeding this silently breaks — there is no static_assert guard.
 

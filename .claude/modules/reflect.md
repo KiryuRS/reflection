@@ -65,10 +65,41 @@ Everything is `static constexpr` — zero runtime storage. `mem_ptr` is a pointe
 Member functions are distinguished at compile time via `std::is_function_v<typename Descriptor::member_type>` (function descriptors have `member_type = ReturnType(Args...)`, a function type).
 
 `get_member_variable` handles both cases via `if constexpr`:
-- **Member variable** — returns `obj.*mem_ptr` (the value)
-- **Member function** — returns `std::bind_front(mem_ptr, std::forward<T>(obj))`, a `constexpr`-compatible callable bound to the object
+- **Member variable** — returns `obj.*mem_ptr` (the value, by reference)
+- **Member function** — returns a callable bound to the object. For lvalue `obj`, uses `std::bind_front(mem_ptr, std::ref(obj))` so that mutations through the callable land on the original object. For rvalue `obj`, uses `std::bind_front(mem_ptr, std::move(obj))`. This is necessary because `std::bind_front` decays its bound arguments — without `std::ref`, an lvalue would be silently copied.
 
 **Restriction:** member functions can only be reflected with `REFLECT`, not `REFLECT_PRINTABLE`. `to_string` uses `OSTREAM_PRINT` which directly streams `object.member` by name, and `print_meta` streams the result of `get_member_variable` — both are ill-formed for function types.
+
+---
+
+## `descriptor_for<T, MemberPtr>` — reverse lookup by member pointer
+
+Given a member pointer, `descriptor_for` resolves the corresponding descriptor type at compile time without iterating at runtime.
+
+```cpp
+using D = reflect::descriptor_for<Foo, &Foo::x>;
+// D::name == "x"
+// D::member_type == int
+// D::mem_ptr == &Foo::x
+```
+
+Works for both data members and member functions:
+
+```cpp
+using D = reflect::descriptor_for<MyStruct, &MyStruct::some_fn>;
+static_assert(std::is_function_v<D::member_type>);
+```
+
+**Implementation (`detail::find_index` + `detail::descriptor_for_t`):**
+
+`find_index<T, MemberPtr>(index_sequence<Is...>)` is a `consteval` function that:
+1. For each index `I`, checks whether `descriptor_array[I]::member_pointer_type` matches `decltype(MemberPtr)` and `mem_ptr == MemberPtr`
+2. Builds a `static constexpr std::array` of candidate indices (or a sentinel if not matching)
+3. Uses `std::ranges::find_if` on that static array to locate the match — the array must be `static constexpr` (not local `constexpr`) so its address is a constant expression eligible for iterator comparison in `static_assert`
+
+`descriptor_for_t<T, MemberPtr>` wraps this: it fetches the descriptor array, calls `find_index`, then resolves the descriptor type via `meta_type_underlying_type<descriptor_array[index]>`.
+
+The public alias `reflect::descriptor_for<T, MemberPtr>` adds a `concepts::member_of<T, MemberPtr>` constraint to catch mistakes (e.g., passing a pointer-to-member of a different class) at the call site.
 
 ---
 
