@@ -6,7 +6,7 @@
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)]()
 [![Header only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)]()
 
-Annotate a struct with a single macro. Get full compile-time introspection — iterate members, access them by descriptor, serialize to YAML, parse CLI arguments — all resolved at compile time with **zero runtime cost**.
+Annotate a struct with a single macro. Get full compile-time introspection — iterate members, access them by descriptor, serialise to YAML, parse CLI arguments — all resolved at compile time with **zero runtime cost**.
 
 Try it live → [Compiler Explorer (GCC 15, -std=c++23 -O3)](https://godbolt.org/z/P9PbWs45h)
 
@@ -114,8 +114,18 @@ Pass base classes in the second argument. `for_each` walks base members first, t
 > Base classes must be reflected before the derived class.
 
 ```cpp
-struct base { std::string name; double score; REFLECT_PRINTABLE(base, (), (name, score)); };
-struct tag   { bool active;                   REFLECT_PRINTABLE(tag,  (), (active));       };
+struct base
+{
+    std::string name;
+    double score;
+    REFLECT_PRINTABLE(base, (), (name, score));
+};
+
+struct tag
+{
+    bool active;
+    REFLECT_PRINTABLE(tag, (), (active));
+};
 
 struct record : base, tag
 {
@@ -234,7 +244,7 @@ docker build -t reflect . && docker run --rm reflect
 
 ## License
 
-MIT © [your name / org here]
+MIT © KiryuRS
 
 ---
 
