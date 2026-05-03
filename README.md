@@ -8,7 +8,7 @@
 
 Annotate a struct with a single macro. Get full compile-time introspection — iterate members, access them by descriptor, serialise to YAML, parse CLI arguments — all resolved at compile time with **zero runtime cost**.
 
-Try it live → [Compiler Explorer (GCC 15, -std=c++23 -O3)](https://godbolt.org/z/P9PbWs45h)
+Try it live → [Compiler Explorer (GCC 15, -std=c++23 -O3)](https://godbolt.org/z/4ncn9Ksvx)
 
 ---
 
