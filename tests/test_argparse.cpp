@@ -1,3 +1,6 @@
+// Copyright (c) 2025 KiryuRS
+// SPDX-License-Identifier: MIT
+
 #include "../include/argparse/argparse.hpp"
 
 #include <gmock/gmock.h>

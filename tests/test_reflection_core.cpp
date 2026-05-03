@@ -1,3 +1,6 @@
+// Copyright (c) 2025 KiryuRS
+// SPDX-License-Identifier: MIT
+
 #include "reflection_mocks.hpp"
 
 #include <gtest/gtest.h>

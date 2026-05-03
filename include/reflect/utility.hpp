@@ -1,3 +1,6 @@
+// Copyright (c) 2025 KiryuRS
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 #include <concepts>

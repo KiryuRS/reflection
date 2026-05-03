@@ -1,3 +1,6 @@
+// Copyright (c) 2025 KiryuRS
+// SPDX-License-Identifier: MIT
+
 #pragma once
 
 // concat 3 variables together to form a name. e.g. PP_CREATE_CLASS_NAME(foo, bar, baz) -> foo_bar_baz
