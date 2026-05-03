@@ -168,10 +168,10 @@ reflect::for_each<entity>([&obj] <typename D>() {
 
 ## YAML Integration
 
-Include `yaml/convert.hpp`. Any reflected type automatically gets `YAML::convert<T>` encode/decode — no manual mapping.
+Include `yaml/parser.hpp`. Any reflected type is possible to use `yaml::deserialize` and `yaml::serialize`. No need for manual mapping.
 
 ```cpp
-#include "yaml/convert.hpp"
+#include "yaml/parser.hpp"
 
 struct server_config
 {
@@ -183,8 +183,8 @@ struct server_config
     REFLECT(server_config, (), (host, port, timeout_ms, allowed_origins));
 };
 
-server_config cfg = YAML::Load(yaml_string).as<server_config>();
-YAML::Node out    = YAML::convert<server_config>::encode(cfg);
+server_config cfg = yaml::deserialize<server_config>(yaml_string);
+YAML::Node out    = yaml::serialize(cfg);
 ```
 
 `std::optional` fields are skipped on encode if empty, and skipped on decode if the key is absent. Containers behave the same way.

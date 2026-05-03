@@ -159,7 +159,7 @@ template <concepts::reflectable T, typename Functor, std::size_t ... Is>
 constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
 {
     // unfortunately the existing range-based for loop (pre C++26) does not have constexpr support,
-    // so we use the traditional lambda + variadic to loop through all of the meta types.
+    // so we use the traditional lambda + variadic trick to expand all of the meta types.
     // ideally what we want is:
     // template for (auto meta : generate_meta_info<T>())
     // {
@@ -192,6 +192,7 @@ constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
 }
 
 /* ===================================== END OF HELPER FUNCTIONS ===================================== */
+/* To be used within REFLECT macro */
 #define GENERATE_DESCRIPTOR(Class, Member)                                                              \
     struct PP_CREATE_CLASS_NAME(descriptor, Class, Member)                                              \
     {                                                                                                   \
@@ -205,9 +206,13 @@ constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
         static constexpr member_pointer_type mem_ptr = &Class::Member;                                  \
     };
 
+/* To be used within REFLECT macro */
 #define GENERATE_MEMBER_META_INFO(Class, Member) ::reflect::detail::meta_type_info<PP_CREATE_CLASS_NAME(descriptor, Class, Member)>,
+
+/* To be used within REFLECT macro */
 #define GET_META_INFO_ARRAY(_, Base) Base::meta_info_array(),
 
+/* Main macro to use for minimal reflection */
 #define REFLECT(Class, Bases, Members)                                                                                      \
     PP_FOR_EACH(GENERATE_DESCRIPTOR, Class, PP_EXPAND_STRIP(Members))                                                       \
     static consteval auto meta_info_array()                                                                                 \
@@ -231,6 +236,7 @@ constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
 /* To be used within REFLECT_PRINTABLE macro */
 #define OSTREAM_PRINT_BASE(_, Base) oss << to_string(static_cast<Base>(object)) << ", ";
 
+/* Main macro to use with printable capabilities */
 #define REFLECT_PRINTABLE(Class, Bases, Members)                                                    \
     REFLECT(Class, Bases, Members)                                                                  \
     /* Other useful reflection helper functions. e.g. operator<< overload, to_string */             \

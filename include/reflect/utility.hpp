@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <concepts>
 #include <source_location>
 #include <string>
@@ -83,9 +84,9 @@ template <typename T, std::size_t ... Is>
 consteval std::array<T, (Is + ...)> concat_arrays(std::array<T, Is> ... arrays)
 {
     std::array<T, (Is + ...)> result{};
-    auto concat = [&result, i = 0] (std::ranges::range auto array) mutable {
-        for (auto elem : array)
-            result[i++] = elem;
+    auto concat = [&result, i = 0ll] (std::ranges::range auto array) mutable {
+        const auto [_, out_iter] = std::ranges::copy(array, std::begin(result) + i);
+        i = out_iter - std::begin(result);
     };
     (concat(arrays), ...);
     return result;

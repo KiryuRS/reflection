@@ -71,7 +71,7 @@ concept descriptor_like = requires {
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflectable = requires {
-    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>; // did you forget to use REFLECT / REFLECT macro?
+    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>; // did you forget to use REFLECT / REFLECT_PRINTABLE macro?
 };
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
