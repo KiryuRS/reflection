@@ -161,7 +161,7 @@ constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
     // unfortunately the existing range-based for loop (pre C++26) does not have constexpr support,
     // so we use the traditional lambda + variadic trick to expand all of the meta types.
     // ideally what we want is:
-    // template for (auto meta : generate_meta_info<T>())
+    // template for (constexpr auto meta : generate_meta_info<T>())
     // {
     //     constexpr auto descriptor = get_descriptor<meta>();
     //     ... // do something with the descriptor
