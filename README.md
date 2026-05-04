@@ -1,12 +1,20 @@
 # reflect
 
-> Compile-time struct reflection for C++23. Zero overhead. One macro.
+> [!NOTE]
+> Compile-time reflection with C++23. **Zero overhead and runtime costs**, with helper APIs to iterate through reflected members.  
+> Only require one macro to activate reflection.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![C++23](https://img.shields.io/badge/C%2B%2B-23-blue.svg)]()
 [![Header only](https://img.shields.io/badge/header--only-yes-brightgreen.svg)]()
 
-Annotate a struct with a single macro. Get full compile-time introspection — iterate members, access them by descriptor, serialise to YAML, parse CLI arguments — all resolved at compile time with **zero runtime cost**.
+Annotate a struct with a single macro (`REFLECT` or `REFLECT_PRINTABLE`) and it automatically gives you the following for free:
+
+* Compile Time Introspection - works for both member variables and member functions
+* Accessing the reflected members through helper functions — `reflect::for_each` and `reflect::get_member_variable<Descriptor>(obj)`
+* All extensions are contained within the struct itself, without altering the behavior of the struct (e.g. remains as aggregate, standard layout type)
+* Extension to YAML serialization using `yaml::serialize` and `yaml::deserialize`
+* Extension to "argparse" - similar to how Python's `argparse` works. Except you **do not need** to create the boilerpate. Simply call `argparse::parse_args<T>(argc, argv)`
 
 Try it live:  
 → [Compiler Explorer (GCC 15, -std=c++23 -O3)](https://godbolt.org/z/4ncn9Ksvx)  
