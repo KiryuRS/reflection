@@ -50,7 +50,7 @@ std::format("{}", pos);         // std::formatter out of the box
 
 ## Installation
 
-Header-only. Copy `include/` into your project and `#include "reflect/reflect.hpp"`.
+Header-only library. Add it as a submodule or use `FetchContent` via cmake.  
 
 No build step required. Dependencies (`yaml-cpp`) are only needed for the optional YAML integration.
 
@@ -60,7 +60,7 @@ No build step required. Dependencies (`yaml-cpp`) are only needed for the option
 
 ### `REFLECT` and `REFLECT_PRINTABLE`
 
-```
+```cpp
 REFLECT(ClassName, (BaseClasses...), (members...))
 REFLECT_PRINTABLE(ClassName, (BaseClasses...), (members...))
 ```
@@ -80,6 +80,16 @@ REFLECT_PRINTABLE(ClassName, (BaseClasses...), (members...))
 ### `reflect::for_each<T>`
 
 Iterates all reflected members at compile time. Each visit receives the descriptor as a template type argument:
+
+> [!INFO]
+> From C++26 onwards, it is also achievable through:
+> ```cpp
+> template for (constexpr auto meta : reflect::generate_meta_info<position_info>())
+> {
+>     constexpr auto descriptor = reflect::get_descriptor<meta>();
+>     auto& member_variable = reflect::get_member_variable(your_obj, descriptor);
+>     // do something else with it ...
+> }
 
 ```cpp
 reflect::for_each<position_info>([&pos] <typename D>() {
