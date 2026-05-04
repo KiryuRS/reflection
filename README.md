@@ -81,7 +81,7 @@ REFLECT_PRINTABLE(ClassName, (BaseClasses...), (members...))
 
 Iterates all reflected members at compile time. Each visit receives the descriptor as a template type argument:
 
-> [!INFO]
+> [!TIP]
 > From C++26 onwards, it is also achievable through:
 > ```cpp
 > template for (constexpr auto meta : reflect::generate_meta_info<position_info>())
