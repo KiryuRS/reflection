@@ -11,7 +11,8 @@ Only require a single annotation to a struct with a single macro (`REFLECT` or `
 
 Try it live:  
 → [Compiler Explorer (GCC 15, -std=c++23 -O3)](https://godbolt.org/z/4ncn9Ksvx)  
-→ [Compiler Explorer (`template for`) (GCC 16.1, -std=c++2c -O3)](https://godbolt.org/z/s7Y578dEe)
+→ [Compiler Explorer (`template for`) (GCC 16.1, -std=c++2c -O3)](https://godbolt.org/z/s7Y578dEe)  
+→ [Compiler Explorer (`object_collector`) (GCC 16.1 -std=c++2c -O3)](https://godbolt.org/z/j36MYqbc8)
 
 ---
 
