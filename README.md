@@ -88,7 +88,7 @@ Iterates all reflected members at compile time. Each visit receives the descript
 > {
 >     constexpr auto descriptor = reflect::get_descriptor<meta>();
 >     auto& member_variable = reflect::get_member_variable(your_obj, descriptor);
->     // do something else with it ...
+>     std::cout << descriptor.name << ": " << member_variable << '\n';
 > }
 
 ```cpp
