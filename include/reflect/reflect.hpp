@@ -223,7 +223,7 @@ constexpr void for_each(Functor&& func, std::index_sequence<Is...> = {})
                                                                                                                             \
     static consteval auto meta_info_array_as_id()                                                                           \
     {                                                                                                                       \
-        static constexpr std::array meta{PP_FOR_EACH(GENERATE_MEMBER_META_INFO, Class, PP_EXPAND_STRIP(Members))};          \
+        static constexpr auto meta = meta_info_array();                                                                     \
         constexpr auto metas = ::reflect::utility::concat_arrays(PP_FOR_EACH_IN_TUPLE(GET_META_INFO_ARRAY, _, Bases) meta); \
         return ::reflect::detail::meta_type_info<struct Class, metas>;                                                      \
     }
