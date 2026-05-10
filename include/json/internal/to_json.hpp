@@ -6,10 +6,10 @@
 #include <concepts>
 #include <string>
 
-namespace json::internal {
+namespace krrs::json::internal {
 
 template <typename T>
-    requires (std::integral<T> || std::floating_point<T>)
+    requires(std::integral<T> || std::floating_point<T>)
 auto to_json(T value)
 {
     if constexpr (std::same_as<T, bool>)
@@ -38,4 +38,4 @@ std::string_view to_json(T value)
     return to_json(std::string{value});
 }
 
-} // namespace json::internal
+} // namespace krrs::json::internal

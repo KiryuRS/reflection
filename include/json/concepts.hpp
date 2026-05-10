@@ -9,7 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace json::concepts {
+namespace krrs::json::concepts {
 
 namespace detail {
 
@@ -28,7 +28,7 @@ struct is_vector : std::false_type
 {
 };
 
-template <typename ... Args>
+template <typename... Args>
 struct is_vector<std::vector<Args...>> : std::true_type
 {
 };
@@ -38,7 +38,7 @@ struct is_unordered_map : std::false_type
 {
 };
 
-template <typename ... Args>
+template <typename... Args>
 struct is_unordered_map<std::unordered_map<Args...>> : std::true_type
 {
 };
@@ -54,4 +54,4 @@ concept same_as_unordered_map = detail::is_unordered_map<std::remove_cvref_t<T>>
 template <typename T>
 concept same_as_optional = detail::is_optional<std::remove_cvref_t<T>>::value;
 
-} // namespace json::concepts
+} // namespace krrs::json::concepts

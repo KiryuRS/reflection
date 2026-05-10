@@ -69,7 +69,7 @@ built_in_types:
     long_value: 99712
 )";
 
-    const auto converted = ::yaml::deserialize<mocks::built_in_types>(yaml_str);
+    const auto converted = ::krrs::yaml::deserialize<mocks::built_in_types>(yaml_str);
     constexpr mocks::built_in_types expected{.floating_value = 111.2f, .integer_value = 20, .char_value = 'A', .double_value = 3.14, .long_value = 99712};
     EXPECT_EQ(converted, expected);
 }
@@ -88,7 +88,7 @@ complex_types:
     optional: 69.69
 )";
 
-    const auto converted = ::yaml::deserialize<mocks::complex_types>(yaml_str);
+    const auto converted = ::krrs::yaml::deserialize<mocks::complex_types>(yaml_str);
     EXPECT_THAT(converted.vector, ElementsAre(1, 2, 3, 4, 5));
     EXPECT_THAT(converted.unordered_map, UnorderedElementsAre(Pair(1, 10), Pair(2, 20)));
     EXPECT_EQ(converted.optional, std::optional<double>(69.69));
@@ -99,15 +99,13 @@ complex_types:
     EXPECT_FALSE(converted.empty_optional.has_value());
 
     // cannot be constexpr because of vector and string
-    const mocks::complex_types expected{
-        .vector = {1, 2, 3, 4, 5},
-        .string = "Hello World",
-        .unordered_map = {std::make_pair(1, 10), std::make_pair(2, 20)},
-        .optional = 69.69,
-        .empty_vector = {},
-        .empty_optional = {},
-        .s = 10
-    };
+    const mocks::complex_types expected{.vector = {1, 2, 3, 4, 5},
+                                        .string = "Hello World",
+                                        .unordered_map = {std::make_pair(1, 10), std::make_pair(2, 20)},
+                                        .optional = 69.69,
+                                        .empty_vector = {},
+                                        .empty_optional = {},
+                                        .s = 10};
     EXPECT_EQ(converted, expected);
 }
 
@@ -121,9 +119,9 @@ built_in_types:
     double_value: 770766.112
     long_value: 62660662
 )";
-    const auto converted = ::yaml::deserialize<mocks::built_in_types>(built_in_types_str);
-    const std::string yaml_str = ::yaml::serialize(converted);
-    const auto round_trip_converted = ::yaml::deserialize<mocks::built_in_types>(yaml_str);
+    const auto converted = ::krrs::yaml::deserialize<mocks::built_in_types>(built_in_types_str);
+    const std::string yaml_str = ::krrs::yaml::serialize(converted);
+    const auto round_trip_converted = ::krrs::yaml::deserialize<mocks::built_in_types>(yaml_str);
     EXPECT_EQ(converted, round_trip_converted);
 }
 
@@ -141,9 +139,9 @@ complex_types:
     empty_optional: 2
 )";
 
-    const auto converted = ::yaml::deserialize<mocks::complex_types>(complex_types_str);
-    const std::string yaml_str = ::yaml::serialize(converted);
-    const auto round_trip_converted = ::yaml::deserialize<mocks::complex_types>(yaml_str);
+    const auto converted = ::krrs::yaml::deserialize<mocks::complex_types>(complex_types_str);
+    const std::string yaml_str = ::krrs::yaml::serialize(converted);
+    const auto round_trip_converted = ::krrs::yaml::deserialize<mocks::complex_types>(yaml_str);
     EXPECT_EQ(converted, round_trip_converted);
 }
 

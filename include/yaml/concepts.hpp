@@ -9,7 +9,7 @@
 #include <string_view>
 #include <utility>
 
-namespace yaml::concepts {
+namespace krrs::yaml::concepts {
 
 namespace detail {
 
@@ -26,8 +26,7 @@ struct is_optional<std::optional<Args...>> : std::true_type
 } // namespace detail
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
-concept container_like = requires(RawT)
-{
+concept container_like = requires(RawT) {
     // though std::string is something like a container, but we don't really regard it as one
     // hence we should ensure that its not a std::string or std::string_view
     requires !std::same_as<std::string, RawT>;
@@ -40,4 +39,4 @@ concept container_like = requires(RawT)
 template <typename T>
 concept same_as_optional = detail::is_optional<std::remove_cvref_t<T>>::value;
 
-} // namespace yaml::concepts
+} // namespace krrs::yaml::concepts

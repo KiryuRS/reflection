@@ -31,14 +31,14 @@ TEST(test_reflection_core, test_struct_traits_and_concepts)
     static_assert(sizeof(mocks::baz) == sizeof(mocks::baz_no_reflect));
 
     // concepts::reflectable passes only for structs with REFLECT / REFLECT_PRINTABLE
-    static_assert(!reflect::concepts::reflectable<mocks::foo_no_reflect>);
-    static_assert(reflect::concepts::reflectable<mocks::foo>);
-    static_assert(reflect::concepts::reflectable<mocks::bar>);
+    static_assert(!krrs::reflect::concepts::reflectable<mocks::foo_no_reflect>);
+    static_assert(krrs::reflect::concepts::reflectable<mocks::foo>);
+    static_assert(krrs::reflect::concepts::reflectable<mocks::bar>);
 
     // concepts::reflect_and_printable requires REFLECT_PRINTABLE — REFLECT alone is not enough
-    static_assert(!reflect::concepts::reflect_and_printable<mocks::foo>);
-    static_assert(reflect::concepts::reflect_and_printable<mocks::bar>);
-    static_assert(reflect::concepts::reflect_and_printable<mocks::baz>);
+    static_assert(!krrs::reflect::concepts::reflect_and_printable<mocks::foo>);
+    static_assert(krrs::reflect::concepts::reflect_and_printable<mocks::bar>);
+    static_assert(krrs::reflect::concepts::reflect_and_printable<mocks::baz>);
 }
 
 TEST(test_reflection_core, test_for_each)
@@ -46,17 +46,15 @@ TEST(test_reflection_core, test_for_each)
     // iteration: walk every member and confirm the count
     constexpr mocks::foo f1{.l = 100, .i = 99, .s = 98, .c = 'A'};
     std::size_t member_count = 0;
-    reflect::for_each<mocks::foo>([&] <typename Descriptor>() { ++member_count; });
+    krrs::reflect::for_each<mocks::foo>([&]<typename Descriptor>() { ++member_count; });
     EXPECT_EQ(member_count, 4u);
 
     // roundtrip: assign each member of f2 from f1 via for_each, then verify equality
     mocks::foo f2{};
-    reflect::for_each<mocks::foo>([&] <typename Descriptor>() {
-        reflect::get_member_variable<Descriptor>(f2) = reflect::get_member_variable<Descriptor>(f1);
-    });
-    reflect::for_each<mocks::foo>([&] <typename Descriptor>() {
-        EXPECT_EQ(reflect::get_member_variable<Descriptor>(f1), reflect::get_member_variable<Descriptor>(f2));
-    });
+    krrs::reflect::for_each<mocks::foo>(
+        [&]<typename Descriptor>() { krrs::reflect::get_member_variable<Descriptor>(f2) = krrs::reflect::get_member_variable<Descriptor>(f1); });
+    krrs::reflect::for_each<mocks::foo>(
+        [&]<typename Descriptor>() { EXPECT_EQ(krrs::reflect::get_member_variable<Descriptor>(f1), krrs::reflect::get_member_variable<Descriptor>(f2)); });
 
     // enum roundtrip: enum_to_string -> string_to_enum must recover the original value
     constexpr auto e0 = mocks::some_enum::VALUE_1;
@@ -71,8 +69,8 @@ TEST(test_reflection_core, test_printable)
     constexpr mocks::bar b1{
         .str_view1 = "Hello World",
         .str_view2 = "long string",
-        .tag       = mocks::another_enum::OFFICIAL,
-        .price     = 69.0,
+        .tag = mocks::another_enum::OFFICIAL,
+        .price = 69.0,
     };
     constexpr mocks::bar b2 = b1;
     constexpr mocks::baz bb1{.b = b1, .f = 3.14f};

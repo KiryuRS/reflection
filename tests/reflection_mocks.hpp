@@ -104,10 +104,10 @@ struct fooz
 // base carries entity-like metadata with a mix of string, numeric, and enum fields.
 struct base
 {
-    std::string      name;
-    uint32_t         id;
-    another_enum     status;
-    double           score;
+    std::string name;
+    uint32_t id;
+    another_enum status;
+    double score;
     std::string_view category;
 
     REFLECT_PRINTABLE(base, (), (name, id, status, score, category));
@@ -116,9 +116,9 @@ struct base
 // base_2 models lightweight scheduling / priority data.
 struct base_2
 {
-    float    weight;
-    int16_t  priority;
-    bool     active;
+    float weight;
+    int16_t priority;
+    bool active;
 
     REFLECT_PRINTABLE(base_2, (), (weight, priority, active));
 };
@@ -126,8 +126,8 @@ struct base_2
 // derived_more inherits from both bases and adds its own members.
 struct derived_more : base, base_2
 {
-    int              x;
-    some_enum        kind;
+    int x;
+    some_enum kind;
     std::string_view note;
 
     REFLECT_PRINTABLE(derived_more, (base, base_2), (x, kind, note));
@@ -138,28 +138,45 @@ struct derived_more : base, base_2
 struct with_functions
 {
     // data members — deliberately heterogeneous
-    int                                     x;
-    double                                  y;
-    std::string_view                        label;
-    std::array<int, 3>                      buffer;       // fixed-size homogeneous array
-    std::vector<std::string>                tags;         // heap-allocated sequence
-    std::unordered_map<std::string, double> registry;     // associative container
-    std::optional<another_enum>             maybe_status; // nullable enum
+    int x;
+    double y;
+    std::string_view label;
+    std::array<int, 3> buffer;                        // fixed-size homogeneous array
+    std::vector<std::string> tags;                    // heap-allocated sequence
+    std::unordered_map<std::string, double> registry; // associative container
+    std::optional<another_enum> maybe_status;         // nullable enum
 
     // member functions — deliberately varied return types and argument lists
-    int  add(int a, int b)              { return a + b; }
-    double scale(double factor)         { return y * factor; }
-    void reset(int new_x, double new_y) { x = new_x; y = new_y; }
+    int add(int a, int b)
+    {
+        return a + b;
+    }
+    double scale(double factor)
+    {
+        return y * factor;
+    }
+    void reset(int new_x, double new_y)
+    {
+        x = new_x;
+        y = new_y;
+    }
     std::optional<int> find_in_buffer(int target)
     {
         for (auto v : buffer)
-            if (v == target) return v;
+        {
+            if (v == target)
+            {
+                return v;
+            }
+        }
         return std::nullopt;
     }
-    void fill_buffer(std::array<int, 3> src) { buffer = src; }
+    void fill_buffer(std::array<int, 3> src)
+    {
+        buffer = src;
+    }
 
-    REFLECT(with_functions, (), (x, y, label, buffer, tags, registry, maybe_status,
-                                 add, scale, reset, find_in_buffer, fill_buffer));
+    REFLECT(with_functions, (), (x, y, label, buffer, tags, registry, maybe_status, add, scale, reset, find_in_buffer, fill_buffer));
 };
 
 } // namespace tests::mocks

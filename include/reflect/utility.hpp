@@ -11,7 +11,7 @@
 #include <type_traits>
 #include <utility>
 
-namespace reflect::utility {
+namespace krrs::reflect::utility {
 
 template <typename T>
 consteval const char* get_function_name()
@@ -61,12 +61,18 @@ consteval std::string_view get_short_name()
     {
         char c = full_type[i];
         if (c == '<')
+        {
             ++levels;
+        }
         else if (c == '>')
+        {
             --levels;
+        }
 
         if (levels == 0 && c == ':')
+        {
             pos = i;
+        }
     }
     return pos == std::string_view::npos ? full_type : full_type.substr(pos + 1);
 }
@@ -75,16 +81,18 @@ constexpr unsigned long hash_dj2ba(std::string_view str)
 {
     unsigned long hash = 5381;
     for (int c : str)
+    {
         hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+    }
     return hash;
 }
 
-template <typename T, std::size_t ... Is>
+template <typename T, std::size_t... Is>
     requires std::destructible<T> && std::is_trivially_default_constructible_v<T>
-consteval std::array<T, (Is + ...)> concat_arrays(std::array<T, Is> ... arrays)
+consteval std::array<T, (Is + ...)> concat_arrays(std::array<T, Is>... arrays)
 {
     std::array<T, (Is + ...)> result{};
-    auto concat = [&result, i = 0ll] (std::ranges::range auto array) mutable {
+    auto concat = [&result, i = 0ll](std::ranges::range auto array) mutable {
         const auto [_, out_iter] = std::ranges::copy(array, std::begin(result) + i);
         i = out_iter - std::begin(result);
     };
@@ -92,4 +100,4 @@ consteval std::array<T, (Is + ...)> concat_arrays(std::array<T, Is> ... arrays)
     return result;
 }
 
-} // namespace reflect::utility
+} // namespace krrs::reflect::utility

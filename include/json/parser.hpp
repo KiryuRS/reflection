@@ -5,20 +5,20 @@
 
 #include "convert.hpp"
 
-namespace json {
+namespace krrs::json {
 
-template <reflect::concepts::reflectable T>
+template <krrs::reflect::concepts::reflectable T>
 T deserialize(const std::string&)
 {
-    static constexpr std::string_view class_name = ::reflect::utility::get_short_name<T>();
+    static constexpr std::string_view class_name = ::krrs::reflect::utility::get_short_name<T>();
     T obj{};
     return {};
 }
 
-template <reflect::concepts::reflectable T>
+template <krrs::reflect::concepts::reflectable T>
 std::string serialize(const T& obj)
 {
-    static constexpr std::string_view class_name = ::reflect::utility::get_short_name<T>();
+    static constexpr std::string_view class_name = ::krrs::reflect::utility::get_short_name<T>();
     std::ostringstream oss;
     oss << '{' << std::quoted(class_name) << ": ";
     oss << convert_to_json(obj);
@@ -26,4 +26,4 @@ std::string serialize(const T& obj)
     return oss.str();
 }
 
-} // namespace json
+} // namespace krrs::json

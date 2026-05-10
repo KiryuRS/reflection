@@ -6,7 +6,7 @@
 #include <concepts>
 #include <utility>
 
-namespace reflect {
+namespace krrs::reflect {
 
 template <typename...>
 struct typelist
@@ -60,4 +60,4 @@ inline constexpr auto typelist_size_v = detail::typelist_size<Typelist>::value;
 template <std::size_t I, same_as_typelist Typelist>
 using typelist_element_t = detail::typelist_element<I, Typelist>::type;
 
-} // namespace reflect
+} // namespace krrs::reflect

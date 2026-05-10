@@ -8,7 +8,7 @@
 #include <type_traits>
 #include <vector>
 
-namespace argparse::concepts {
+namespace krrs::argparse::concepts {
 
 namespace detail {
 
@@ -17,7 +17,7 @@ struct same_as_vector : std::false_type
 {
 };
 
-template <typename ... Ts>
+template <typename... Ts>
 struct same_as_vector<std::vector<Ts...>> : std::true_type
 {
 };
@@ -40,4 +40,4 @@ concept same_as_vector = detail::same_as_vector<T>::value;
 template <typename T>
 concept same_as_optional = detail::is_optional<std::remove_cvref_t<T>>::value;
 
-} // namespace argparse::concepts
+} // namespace krrs::argparse::concepts

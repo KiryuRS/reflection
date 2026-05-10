@@ -5,7 +5,7 @@
 
 #include <sstream>
 
-namespace json::internal {
+namespace krrs::json::internal {
 
 inline void skip_whitespace(std::istringstream& iss)
 {
@@ -38,4 +38,4 @@ inline std::string parse_string(std::istringstream& iss)
     return {};
 }
 
-} // namespace json::internal
+} // namespace krrs::json::internal

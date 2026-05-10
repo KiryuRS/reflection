@@ -9,19 +9,19 @@
 
 #include <iomanip>
 
-namespace json {
+namespace krrs::json {
 
-template <::reflect::concepts::reflectable T>
+template <::krrs::reflect::concepts::reflectable T>
 std::string convert_to_json(const T& obj)
 {
     std::ostringstream oss;
     oss << '{';
-    ::reflect::for_each<T>([&oss, &obj, obj_delimiter=""] <typename Descriptor>() mutable {
+    ::krrs::reflect::for_each<T>([&oss, &obj, obj_delimiter = ""]<typename Descriptor>() mutable {
         using member_type = typename Descriptor::member_type;
-        const auto& member = ::reflect::get_member_variable<Descriptor>(obj);
+        const auto& member = ::krrs::reflect::get_member_variable<Descriptor>(obj);
         oss << std::exchange(obj_delimiter, ", ") << std::quoted(Descriptor::name) << ": ";
 
-        if constexpr (::reflect::concepts::reflectable<member_type>)
+        if constexpr (::krrs::reflect::concepts::reflectable<member_type>)
         {
             oss << convert_to_json<member_type>(member);
         }
@@ -42,7 +42,7 @@ std::string convert_to_json(const T& obj)
 
             oss << '{';
             const char* delimiter = "";
-            for (const auto& [key, value] :  member)
+            for (const auto& [key, value] : member)
             {
                 oss << std::exchange(delimiter, ", ") << internal::to_json(key) << ": " << internal::to_json(value);
             }
@@ -68,10 +68,10 @@ std::string convert_to_json(const T& obj)
     return oss.str();
 }
 
-template <::reflect::concepts::reflectable T>
+template <::krrs::reflect::concepts::reflectable T>
 void convert_from_json(T&, const std::string&)
 {
     // TODO: Implement me?
 }
 
-} // namespace json
+} // namespace krrs::json

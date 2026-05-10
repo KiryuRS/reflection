@@ -20,28 +20,28 @@ namespace mocks {
 
 struct json_primitives
 {
-    bool            active;
-    char            letter;
-    int32_t         count;
-    int64_t         big_count;
-    uint64_t        unsigned_big;
-    float           rate;
-    double          precision;
-    const char*     cstr;
+    bool active;
+    char letter;
+    int32_t count;
+    int64_t big_count;
+    uint64_t unsigned_big;
+    float rate;
+    double precision;
+    const char* cstr;
     std::string_view sv;
-    std::string     name;
+    std::string name;
 
     REFLECT(json_primitives, (), (active, letter, count, big_count, unsigned_big, rate, precision, cstr, sv, name));
 };
 
 struct json_compound
 {
-    json_primitives                          inner;
-    std::vector<int>                         numbers;
-    std::vector<std::string>                 tags;
-    std::unordered_map<std::string, int>     registry;
-    std::optional<int>                       maybe_int;
-    std::optional<std::string>               maybe_str;
+    json_primitives inner;
+    std::vector<int> numbers;
+    std::vector<std::string> tags;
+    std::unordered_map<std::string, int> registry;
+    std::optional<int> maybe_int;
+    std::optional<std::string> maybe_str;
 
     REFLECT(json_compound, (), (inner, numbers, tags, registry, maybe_int, maybe_str));
 };
@@ -51,18 +51,18 @@ struct json_compound
 TEST(test_json_serialization, serialize_primitive_and_string_types)
 {
     const mocks::json_primitives obj{
-        .active       = true,
-        .letter       = 'Z',
-        .count        = -100,
-        .big_count    = -9'000'000'000LL,
+        .active = true,
+        .letter = 'Z',
+        .count = -100,
+        .big_count = -9'000'000'000LL,
         .unsigned_big = 18'000'000'000ULL,
-        .rate         = 1.5f,
-        .precision    = 3.14,
-        .cstr         = "c-string",
-        .sv           = "a-view",
-        .name         = "alice",
+        .rate = 1.5f,
+        .precision = 3.14,
+        .cstr = "c-string",
+        .sv = "a-view",
+        .name = "alice",
     };
-    const std::string result = json::serialize(obj);
+    const std::string result = krrs::json::serialize(obj);
     EXPECT_THAT(result, StartsWith(R"({"json_primitives": )"));
     EXPECT_THAT(result, HasSubstr(R"("active": true)"));
     EXPECT_THAT(result, HasSubstr(R"("letter": "Z")"));
@@ -80,14 +80,14 @@ TEST(test_json_serialization, serialize_complex_types)
 {
     // fully populated — nested struct, all container types, both optionals present
     const mocks::json_compound full{
-        .inner        = {true, 'A', 10, 1000LL, 9999ULL, 1.5f, 1.5, "nested", "view", "world"},
-        .numbers      = {1, 2, 3},
-        .tags         = {"foo", "bar"},
-        .registry     = {{"alpha", 1}, {"beta", 2}},
-        .maybe_int    = 7,
-        .maybe_str    = "present",
+        .inner = {true, 'A', 10, 1000LL, 9999ULL, 1.5f, 1.5, "nested", "view", "world"},
+        .numbers = {1, 2, 3},
+        .tags = {"foo", "bar"},
+        .registry = {{"alpha", 1}, {"beta", 2}},
+        .maybe_int = 7,
+        .maybe_str = "present",
     };
-    const std::string full_result = json::convert_to_json(full);
+    const std::string full_result = krrs::json::convert_to_json(full);
     EXPECT_THAT(full_result, HasSubstr(R"("numbers": [1, 2, 3])"));
     EXPECT_THAT(full_result, HasSubstr(R"("tags": ["foo", "bar"])"));
     EXPECT_THAT(full_result, HasSubstr(R"("maybe_int": 7)"));
@@ -101,16 +101,16 @@ TEST(test_json_serialization, serialize_complex_types)
 
     // sparse — both optionals absent, sequence containers empty
     const mocks::json_compound sparse{
-        .inner        = {false, 'B', 0, 0LL, 0ULL, 0.0f, 0.0, "", "", ""},
-        .numbers      = {},
-        .tags         = {},
-        .registry     = {},
-        .maybe_int    = std::nullopt,
-        .maybe_str    = std::nullopt,
+        .inner = {false, 'B', 0, 0LL, 0ULL, 0.0f, 0.0, "", "", ""},
+        .numbers = {},
+        .tags = {},
+        .registry = {},
+        .maybe_int = std::nullopt,
+        .maybe_str = std::nullopt,
     };
-    const std::string sparse_result = json::convert_to_json(sparse);
-    EXPECT_THAT(sparse_result, Not(HasSubstr("maybe_int")));
-    EXPECT_THAT(sparse_result, Not(HasSubstr("maybe_str")));
+    const std::string sparse_result = krrs::json::convert_to_json(sparse);
+    EXPECT_THAT(sparse_result, HasSubstr(R"("maybe_int": null)"));
+    EXPECT_THAT(sparse_result, HasSubstr(R"("maybe_str": null)"));
     EXPECT_THAT(sparse_result, HasSubstr(R"("numbers": [])"));
     EXPECT_THAT(sparse_result, HasSubstr(R"("tags": [])"));
 }

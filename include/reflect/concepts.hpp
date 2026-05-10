@@ -9,7 +9,7 @@
 #include <string_view>
 #include <type_traits>
 
-namespace reflect::concepts {
+namespace krrs::reflect::concepts {
 
 namespace detail {
 
@@ -71,14 +71,14 @@ concept descriptor_like = requires {
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflectable = requires {
-    { RawT::meta_info_array_as_id() } -> std::same_as<void(*)()>; // did you forget to use REFLECT / REFLECT_PRINTABLE macro?
+    { RawT::meta_info_array_as_id() } -> std::same_as<void (*)()>; // did you forget to use REFLECT / REFLECT_PRINTABLE macro?
 };
 
 template <typename T, typename RawT = std::remove_cvref_t<T>>
 concept reflect_and_printable = requires {
     requires reflectable<RawT>;
-    { to_string(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT_PRINTABLE macro?
+    { to_string(std::declval<RawT>()) } -> std::same_as<std::string>;  // did you forget to use REFLECT_PRINTABLE macro?
     { print_meta(std::declval<RawT>()) } -> std::same_as<std::string>; // did you forget to use REFLECT_PRINTABLE macro?
 };
 
-} // namespace reflect::concepts
+} // namespace krrs::reflect::concepts

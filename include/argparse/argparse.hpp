@@ -3,14 +3,14 @@
 
 #pragma once
 
+#include "../reflect/reflect.hpp"
 #include "concepts.hpp"
 #include "convertors.hpp"
-#include "../reflect/reflect.hpp"
 
 #include <format>
 #include <utility>
 
-namespace argparse {
+namespace krrs::argparse {
 
 namespace detail {
 
@@ -28,7 +28,9 @@ void validate_args(const auto& args_supplied)
     for (const auto& arg_supplied_info : args_supplied)
     {
         if (arg_supplied_info.supplied)
+        {
             continue;
+        }
 
         parse_error_msg += std::exchange(delimiter, ", ");
         parse_error_msg += arg_supplied_info.name;
@@ -57,7 +59,7 @@ bool has_default_value(MemberType& member_variable)
 
 } // namespace detail
 
-template <::reflect::concepts::reflectable T>
+template <::krrs::reflect::concepts::reflectable T>
 constexpr T parse_args(int argc, const char* argv[])
 {
     using namespace std::string_view_literals;
@@ -80,17 +82,17 @@ constexpr T parse_args(int argc, const char* argv[])
     const std::vector<std::string_view> vectorized_args{argv, argv + argc};
 
     // TODO: use inplace_vector from C++26
-    std::array<detail::arg_supplied_info, ::reflect::generate_meta_info<T>().size()> args_supplied;
+    std::array<detail::arg_supplied_info, ::krrs::reflect::generate_meta_info<T>().size()> args_supplied;
 
     T parsed{};
 
-    ::reflect::for_each<T>([&parsed, &vectorized_args, &args_supplied, i=0] <typename Descriptor>() mutable {
+    ::krrs::reflect::for_each<T>([&parsed, &vectorized_args, &args_supplied, i = 0]<typename Descriptor>() mutable {
         using member_type = Descriptor::member_type;
-        auto& member_variable = ::reflect::get_member_variable<Descriptor>(parsed);
+        auto& member_variable = ::krrs::reflect::get_member_variable<Descriptor>(parsed);
 
         detail::arg_supplied_info info{Descriptor::name, detail::has_default_value(member_variable)};
 
-        auto iter = std::ranges::find_if(vectorized_args, [] (std::string_view arg) {
+        auto iter = std::ranges::find_if(vectorized_args, [](std::string_view arg) {
             // TODO: Support for short form? (e.g. -c for --config)
             return arg.starts_with("--") && arg.substr(2) == Descriptor::name;
         });
@@ -107,7 +109,8 @@ constexpr T parse_args(int argc, const char* argv[])
             }
             else
             {
-                throw std::invalid_argument(std::format("[argparse] failed to parse {} of type {}. Please check arguments!", Descriptor::name, Descriptor::mem_type_str));
+                throw std::invalid_argument(
+                    std::format("[argparse] failed to parse {} of type {}. Please check arguments!", Descriptor::name, Descriptor::mem_type_str));
             }
         }
         args_supplied[i++] = std::move(info);
@@ -117,4 +120,4 @@ constexpr T parse_args(int argc, const char* argv[])
     return parsed;
 }
 
-} // namespace argparse
+} // namespace krrs::argparse
