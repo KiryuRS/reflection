@@ -30,8 +30,8 @@ struct position_info
 constexpr position_info pos{1.0, 3.0, 4.0, 2.0};
 
 // iterate all members at compile time
-reflect::for_each<position_info>([&pos] <typename D>() {
-    std::cout << D::name << ": " << reflect::get_member_variable<D>(pos) << "\n";
+krrs::reflect::for_each<position_info>([&pos] <typename D>() {
+    std::cout << D::name << ": " << krrs::reflect::get_member_variable<D>(pos) << "\n";
 });
 
 std::cout << pos;               // operator<< out of the box
@@ -71,40 +71,40 @@ REFLECT_PRINTABLE(ClassName, (BaseClasses...), (members...))
 
 | Feature | `REFLECT` | `REFLECT_PRINTABLE` |
 |---|:---:|:---:|
-| `reflect::for_each<T>` | ✓ | ✓ |
-| `reflect::get_member_variable<D>(obj)` | ✓ | ✓ |
-| `reflect::descriptor_for<T, &T::member>` | ✓ | ✓ |
+| `krrs::reflect::for_each<T>` | ✓ | ✓ |
+| `krrs::reflect::get_member_variable<D>(obj)` | ✓ | ✓ |
+| `krrs::reflect::descriptor_for<T, &T::member>` | ✓ | ✓ |
 | `to_string(obj)` | | ✓ |
 | `operator<<` | | ✓ |
 | `std::formatter<T>` | | ✓ |
 | `print_meta(obj)` | | ✓ |
 
-### `reflect::for_each<T>`
+### `krrs::reflect::for_each<T>`
 
 Iterates all reflected members at compile time. Each visit receives the descriptor as a template type argument:
 
 > [!TIP]
 > From C++26 onwards, it is also achievable through:
 > ```cpp
-> template for (constexpr auto meta : reflect::generate_meta_info<position_info>())
+> template for (constexpr auto meta : krrs::reflect::generate_meta_info<position_info>())
 > {
->     constexpr auto descriptor = reflect::get_descriptor<meta>();
->     auto& member_variable = reflect::get_member_variable(your_obj, descriptor);
+>     constexpr auto descriptor = krrs::reflect::get_descriptor<meta>();
+>     auto& member_variable = krrs::reflect::get_member_variable(your_obj, descriptor);
 >     std::cout << descriptor.name << ": " << member_variable << '\n';
 > }
 
 ```cpp
-reflect::for_each<position_info>([&pos] <typename D>() {
-    std::cout << D::name << ": " << reflect::get_member_variable<D>(pos) << "\n";
+krrs::reflect::for_each<position_info>([&pos] <typename D>() {
+    std::cout << D::name << ": " << krrs::reflect::get_member_variable<D>(pos) << "\n";
 });
 ```
 
-### `reflect::descriptor_for<T, MemberPtr>`
+### `krrs::reflect::descriptor_for<T, MemberPtr>`
 
 Reverse-lookup a descriptor from a member pointer — fully resolved at compile time:
 
 ```cpp
-using D = reflect::descriptor_for<position_info, &position_info::position>;
+using D = krrs::reflect::descriptor_for<position_info, &position_info::position>;
 
 static_assert(D::name == "position");
 static_assert(std::same_as<D::member_type, double>);
@@ -115,9 +115,9 @@ static_assert(D::mem_ptr == &position_info::position);
 
 | Concept | Passes when |
 |---|---|
-| `reflect::concepts::reflectable<T>` | `T` has `REFLECT` or `REFLECT_PRINTABLE` |
-| `reflect::concepts::reflect_and_printable<T>` | `T` has `REFLECT_PRINTABLE` |
-| `reflect::concepts::descriptor_like<D>` | `D` is a valid descriptor type |
+| `krrs::reflect::concepts::reflectable<T>` | `T` has `REFLECT` or `REFLECT_PRINTABLE` |
+| `krrs::reflect::concepts::reflect_and_printable<T>` | `T` has `REFLECT_PRINTABLE` |
+| `krrs::reflect::concepts::descriptor_like<D>` | `D` is a valid descriptor type |
 
 ---
 
@@ -166,13 +166,13 @@ struct entity
     REFLECT(entity, (), (id, update));
 };
 
-reflect::for_each<entity>([&obj] <typename D>() {
+krrs::reflect::for_each<entity>([&obj] <typename D>() {
     if constexpr (std::is_function_v<typename D::member_type>)
     {
         using ret  = typename D::introspection_type::return_type;
         using args = typename D::introspection_type::arguments_type; // typelist<float, int>
 
-        auto fn = reflect::get_member_variable<D>(obj); // callable bound to obj by reference
+        auto fn = krrs::reflect::get_member_variable<D>(obj); // callable bound to obj by reference
         fn(0.016f, 0);
     }
 });
@@ -182,7 +182,7 @@ reflect::for_each<entity>([&obj] <typename D>() {
 
 ## YAML Integration
 
-Include `yaml/parser.hpp`. Any reflected type is possible to use `yaml::deserialize` and `yaml::serialize`. No need for manual mapping.
+Include `yaml/parser.hpp`. Any reflected type is possible to use `krrs::yaml::deserialize` and `krrs::yaml::serialize`. No need for manual mapping.
 
 ```cpp
 #include "yaml/parser.hpp"
@@ -197,8 +197,8 @@ struct server_config
     REFLECT(server_config, (), (host, port, timeout_ms, allowed_origins));
 };
 
-server_config cfg = yaml::deserialize<server_config>(yaml_string);
-YAML::Node out    = yaml::serialize(cfg);
+server_config cfg = krrs::yaml::deserialize<server_config>(yaml_string);
+YAML::Node out    = krrs::yaml::serialize(cfg);
 ```
 
 `std::optional` fields are skipped on encode if empty, and skipped on decode if the key is absent. Containers behave the same way.
@@ -223,7 +223,7 @@ struct program_args
 };
 
 // ./app --config_path ./cfg.yaml --worker_count 4 --plugins a,b,c
-auto args = argparse::parse_args<program_args>(argc, argv);
+auto args = krrs::argparse::parse_args<program_args>(argc, argv);
 ```
 
 Scalar fields are required. `std::optional` and `std::vector` fields are optional (default to empty).
@@ -233,7 +233,8 @@ Scalar fields are required. `std::optional` and `std::vector` fields are optiona
 ## Building & Testing
 
 ```bash
-./conan_build.sh   # install deps via Conan, build with CMake, run test suite
+./conan_build.sh           # install deps via Conan, build with CMake, run test suite
+./conan_build.sh --format  # run clang-format first, then build and test
 ```
 
 Or with Docker:
