@@ -1,0 +1,67 @@
+---
+Language: Cpp
+BasedOnStyle: LLVM
+
+# --- INDENTATION & LAYOUT ---
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+AccessModifierOffset: -4
+ColumnLimit: 160
+Standard: Latest
+
+# --- ARGUMENTS & PARAMETERS ---
+ConstructorInitializerAllOnOneLineOrOnePerLine: false
+BreakConstructorInitializers: BeforeComma
+ConstructorInitializerIndentWidth: 4
+AlignAfterOpenBracket: Align
+BinPackArguments: false
+BinPackParameters: false
+AllowAllArgumentsOnNextLine: false
+AllowAllParametersOfDeclarationOnNextLine: false
+BreakBeforeBinaryOperators: All
+
+# --- TEMPLATES ---
+AlwaysBreakTemplateDeclarations: Yes
+
+# --- BRACE CONFIGURATION ---
+InsertBraces: true
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterControlStatement: Always
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: false
+  AfterStruct: true
+  AfterUnion: true
+  AfterExternBlock: false
+  BeforeCatch: true
+  BeforeElse: true
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# --- NAMESPACE & INCLUDES ---
+FixNamespaceComments: true
+ShortNamespaceLines: 0
+SortIncludes: true
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '^<engine/'
+    Priority: 1
+  - Regex: '^(<boost/|<gmock/|<gtest/|<spdlog/|<yaml-cpp/>)'
+    Priority: 2
+  - Regex: '^<.*>'
+    Priority: 3
+
+# --- STYLE PREFERENCES ---
+SpaceAfterTemplateKeyword: true
+PointerAlignment: Left
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortIfStatementsOnASingleLine: false
+AlwaysBreakBeforeMultilineStrings: false  # not relevant here
+AllowShortLoopsOnASingleLine: false
+---

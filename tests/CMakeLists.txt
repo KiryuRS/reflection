@@ -57,6 +57,7 @@ function(add_unit_test TEST_FILENAME_WITHOUT_CPP)
 endfunction()
 
 add_unit_test(test_argparse)
+add_unit_test(test_json_serialization)
 add_unit_test(test_reflection_core)
 add_unit_test(test_reflection_extended)
 add_unit_test(test_yaml_conversion)
