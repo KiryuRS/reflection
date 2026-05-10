@@ -47,14 +47,14 @@ BraceWrapping:
 # --- NAMESPACE & INCLUDES ---
 FixNamespaceComments: true
 ShortNamespaceLines: 0
-SortIncludes: true
+SortIncludes: CaseSensitive
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^<engine/'
+  - Regex: '^"'
     Priority: 1
-  - Regex: '^(<boost/|<gmock/|<gtest/|<spdlog/|<yaml-cpp/>)'
+  - Regex: '^(<boost/|<gmock/|<gtest/|<spdlog/|<yaml-cpp/)'
     Priority: 2
-  - Regex: '^<.*>'
+  - Regex: '^<'
     Priority: 3
 
 # --- STYLE PREFERENCES ---

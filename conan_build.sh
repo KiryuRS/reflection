@@ -33,5 +33,45 @@ run() {
     popd > /dev/null
 }
 
-build $@
+# runs clang-format; prints each file that would be modified
+format() {
+    pushd "$APP_DATA_DIR" > /dev/null
+
+    local modified_files=()
+
+    while IFS= read -r -d '' file; do
+        if ! clang-format --dry-run --Werror "$file" 2>/dev/null; then
+            modified_files+=("$file")
+        fi
+    done < <(find include tests -name "*.hpp" -o -name "*.cpp" | sort | tr '\n' '\0')
+
+    if [[ ${#modified_files[@]} -eq 0 ]]; then
+        echo "clang-format: all files are already formatted."
+    else
+        echo "clang-format: the following files would be modified:"
+        for file in "${modified_files[@]}"; do
+            echo "  $file"
+            clang-format -i "$file"
+        done
+    fi
+
+    popd > /dev/null
+}
+
+# parse --format flag
+RUN_FORMAT=false
+PASSTHROUGH_ARGS=()
+for arg in "$@"; do
+    if [[ "$arg" == "--format" ]]; then
+        RUN_FORMAT=true
+    else
+        PASSTHROUGH_ARGS+=("$arg")
+    fi
+done
+
+if $RUN_FORMAT; then
+    format
+fi
+
+build "${PASSTHROUGH_ARGS[@]+"${PASSTHROUGH_ARGS[@]}"}"
 run
